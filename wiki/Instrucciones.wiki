@@ -1,0 +1,45 @@
+#summary Instrucciones de uso para el script
+
+=QUE ES EPLVALIDATOR=
+Se trata de un script en python que nos ayudará a detectar gran cantidad de fallos frecuentes en los epubs antes de publicarlos en la web.
+
+=PRERREQUISITOS=
+Al ser un script de python, es multiplataforma. Sin embargo requerirá que tengamos instalado en nuestra máquina un intérprete de python 3. Hoy en día, normalmente todos tenemos instalado un intérprete de python 2.x. Sin embargo esto no será suficiente, debemos instalar un intérprete de python 3 (en las pruebas se está usando python 3.3, así que recomiendo esta versión). Para comprobar si tenemos python3 instalado, y ver qué versión en concreto, podemos ejecutar en la línea de comandos:
+
+	python3 --version
+
+Si obtenemos algo así como:
+
+	“python3 no se reconoce como un comando interno.....”
+
+o bien:
+
+	“bash: python3: command not found”*
+	*Nota: el mensaje en concreto dependerá del SO que estéis utilizando
+
+significa que NO tenemos un interprete de python 3 instalado. En caso de que tengamos uno, la salida nos mostrará el número de versión.
+
+Si no disponemos del interprete de python3, debemos visitar http://python.org/download/ y descargar e instalar la versión correspondiente a nuestro sistema operativo (recomiendo instalar la 3.3.1 o posterior).
+
+
+=MODO DE EMPLEO:=
+El script tiene dos modos de empleo
+
+==Modo 1. Validar un único archivo==
+
+Ejecutamos el script bien haciendo doble click sobre él, o bien desde la linea de comandos sin ningún argumento adicional “python3 eplvalidator.py”
+
+Nos mostrará una pantalla de selección de archivos. Buscamos el epub que deseamos validar y pulsamos aceptar.
+
+Se ejecutará el script y nos mostrará los errores detectados en una nueva pantalla.
+
+==Modo 2. Validar todos los archivos dentro de un directorio==
+
+Ejecutamos el script desde la línea de comandos, poniendo como argumento la ruta al directorio donde se encuentran los epubs que deseamos validar. Por ejemplo algo así como “python3 eplvalidator.py /home/monthy/EPL/libros_pendientes”
+
+El script ejecutará la validación sobre todos los epubs que encuentre en dicho directorio y nos mostrará una pantalla con los resultados.
+
+
+=FALSOS POSITIVOS=
+
+En caso que el programa os reporte errores en los epubs que pensáis que son incorrectos, por favor informad de ello creando un nuevo tiquet, incluyendo a ser posible el epub que dio el falso positivo.
