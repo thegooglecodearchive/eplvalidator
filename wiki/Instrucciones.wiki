@@ -6,16 +6,16 @@ Se trata de un script en python que nos ayudará a detectar gran cantidad de fal
 =PRERREQUISITOS=
 Al ser un script de python, es multiplataforma. Sin embargo requerirá que tengamos instalado en nuestra máquina un intérprete de python 3. Hoy en día, normalmente todos tenemos instalado un intérprete de python 2.x. Sin embargo esto no será suficiente, debemos instalar un intérprete de python 3 (en las pruebas se está usando python 3.3, así que recomiendo esta versión). Para comprobar si tenemos python3 instalado, y ver qué versión en concreto, podemos ejecutar en la línea de comandos:
 
-	python3 --version
+	{{{python3 --version}}}
 
 Si obtenemos algo así como:
 
-	“python3 no se reconoce como un comando interno.....”
+	{{{python3 no se reconoce como un comando interno...”}}}
 
 o bien:
 
-	“bash: python3: command not found”*
-	*Nota: el mensaje en concreto dependerá del SO que estéis utilizando
+	{{{bash: python3: command not found”}}}
+	Nota: el mensaje en concreto dependerá del SO que estéis utilizando
 
 significa que NO tenemos un interprete de python 3 instalado. En caso de que tengamos uno, la salida nos mostrará el número de versión.
 
