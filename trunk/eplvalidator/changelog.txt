@@ -1,0 +1,51 @@
+PRUEBAS ACTUALMENTE IMPLEMENTADAS
+---------------------------------
+
+-Comprobar "add semantics" en cover.jpg
+-Comprobar Géneros:
+---Al menos existe un género de la lista oficial
+---Al menos existe un subgénero de la lista oficial
+---No hay género o subgéneros que no estén en la lista
+---No hay géneros y subgéneros de Ficción asignados a libros de No ficción y viceversa
+---Mostrar warning si no se han incluido las etiquetas “Ficción” o “No ficción” (no son obligatorias, pero sí recomendables)
+-Comprobar tamaño de archivos, verifica que ninguno exceda los 300 KB
+-Comprobar que todos los autores y contributors tienen File-As
+-Comprobar que el nombre de archivo no tiene caracteres no permitidos
+-Comprobar que los archivos internos no tienen caracteres no permitidos en el nombre
+-Comprobar que el bookID es diferente del epub base
+-Comprobar la ausencia de etiquetas <i> <b>
+-Comprobar que la versión en el nombre de archivo coincide con la versión de la página de título
+-Comprobar formato correcto del nombre de archivo:
+[saga larga] Apellido, Nombre - Titulo (rx.x texto_opcional).epub
+Apellido, Nombre - [saga número] Titulo (rx.x texto_opcional).epub
+Apellido, Nombre - Titulo (rx.x texto_opcional).epub
+nota: la detección de nombres de archivos con más de un autor aún no está implementada.
+-Comprobar que el epub contiene los metadatos obligatorios (título, autor, editorial[=ePubLibre], idioma, fecha publicación, fecha modificación, descripción)
+-Comprobar que en caso de que el nombre de archivo contenga una serie, el metadato <meta content="XXX" name="calibre:series"/> está presente en los metadatos.
+-Comprobar que el año de publicación no es posterior al año actual (error frecuente en MacOSX)
+-Comprobar que el año de publicación (metadatos) coincide con el año de publicación en página info.
+-Comprobar que el UUID es el mismo en content.opf y toc.ncx
+-Comprobar que no contiene simultáneamente etiquetas exclusivas de ficción y de no ficción
+
+
+Pruebas pendientes de implementar:
+---------------------------------
+-Comprobar que las dimensiones de la portada son 900x600
+-Comprobar que ninguna imagen supera 900 px en alguno de sus lados
+-Comprobar que el traductor (metadatos) coincide con el traductor en página info
+-Comprobar qe no existen estilos sgc / sigil / calibre en el texto del libro
+
+
+v1.02
+-Corregida detección del subgénero "Ciencias naturales" (había una mayúscula de más)
+-Cambiada detección de "No ficción" por "No Ficción"
+-Abortar la ejecución cuando el número de argumentos es erróneo
+
+v1.01:
+-Añadida pausa al finalizar la ejecución, para que no se cierre la ventana con los resultados
+-Solucionado problema con toc.ncx que quedaba abierto
+-Contemplada posibilidad de nombres con guion en pagina de info, para la detección del año de publicación
+-Captura de excepciones en la importación del módulo tkinter
+
+v1.00:
+-Versión inicial
