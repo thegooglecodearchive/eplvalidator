@@ -5,7 +5,7 @@ EPLValidator
 Created on May 16, 2013
 
 @author: betatron
-v1.02
+v1.03
 
 Ver changelog.txt para listado de pruebas implementadas y pendientes
 
@@ -18,6 +18,7 @@ import shutil
 import string
 import os.path
 import re
+import struct
 from datetime import date
 from datetime import datetime
 from xml.dom import minidom
@@ -30,7 +31,7 @@ except ImportError as exc:
 
 #Constantes globales
 #-------------------
-version = 1.02
+version = 1.03
 
 uuid_epubbase = 'urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617'
 
@@ -144,13 +145,13 @@ def comprobar_generos_y_subgeneros():
             if not set(etiquetas).intersection(subgeneros):
                 lista_errores.append("ERROR: Falta subgenero o subgénero erroneo")
             #si se ha añadido la etiqueta Ficción, entonces comrpueba que no hay asignados géneros y subgéneros de No ficción
-            if 'Ficción' in etiquetas:
+            if tipo[0] in etiquetas:
                 if (set(etiquetas).intersection([item for item in subgeneros_no_ficcion if item not in subgeneros_ficcion])):
                     lista_errores.append("ERROR: Subgéneros de no ficción utilizado en libro de ficción")
                 if set(etiquetas).intersection(generos_no_ficcion):
                     lista_errores.append("ERROR: Géneros de no ficción utilizado en libro de ficción")
             #si se ha añadido la etiqueta No ficción, entonces comrpueba que no hay asignados géneros y subgéneros de Ficción
-            if 'No Ficción' in etiquetas:
+            if tipo[1] in etiquetas:
                 if (set(etiquetas).intersection([item for item in subgeneros_ficcion if item not in subgeneros_no_ficcion])):
                     lista_errores.append("ERROR: Subgéneros de ficción utilizado en libro de no ficción")
                 if set(etiquetas).intersection(generos_ficcion):
@@ -175,7 +176,7 @@ def comprobar_file_as():
         if (node.nodeName == 'dc:creator') or (node.nodeName =='dc:contributor'):
             atr_fileas = node.getAttribute('opf:file-as')
             if atr_fileas == "":
-                lista_errores.append("ERROR: Falta File-as para el autor o colaboraor  " +  node.firstChild.nodeValue)
+                lista_errores.append("ERROR: Falta File-as para el autor o colaboraor " +  node.firstChild.nodeValue)
 
 
 def comprobar_nombre_archivo():
@@ -214,7 +215,7 @@ def get_version_from_filename(epub):
     pattern = "\(r([0-9]\.[0-9])[^\)]*\).epub"
     m = re.search(pattern,epub)
     if m is None:
-        print("version no encontrada")
+        print("ERROR: version no encontrada en el nombre de archivo")
     else:
         return m.group(1) 
     
@@ -346,6 +347,69 @@ def comprobar_saga_en_metadatos():
         if nodes == list():
             lista_errores.append('WARNING: No se ha indicado la saga en los metadatos mediante la etiqueta <meta content="XXX" name="calibre:series"/>')
 
+def get_translator_from_info_page():
+    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
+    title_id = elem[3].getAttribute('idref')
+    elem = xmldoc_opf.getElementsByTagName('manifest')
+    for n in elem[0].childNodes:
+        if n.nodeName == 'item':
+            if n.getAttribute('id') == title_id:
+                title_file = n.getAttribute('href')    
+    f = open(tempdir + dir + title_file, "r", encoding="utf-8")
+    #f = open(tempdir + dir + title_file, "r") #python 2.7
+    pattern = '<p>Traducción: ([\w\s\.\-&;]+)( \([0-9]{4}\))?</p>'
+    for line in f:
+        m = re.search(pattern, line)
+        if not m is None:
+            return m.group(1)
+
+def comprobar_traductor():
+    elem = xmldoc_opf.getElementsByTagName('dc:contributor') #obtiene metadatos
+    for node in elem:
+        if (node.getAttribute('opf:role') == 'trl'):            
+            traductor_info = get_translator_from_info_page()
+            traductor_metadatos =  node.firstChild.nodeValue
+            if (traductor_metadatos is None) and (traductor_info is not None):
+                lista_errores.append("ERROR: Falta el traductor en los metadatos")
+            elif (traductor_metadatos is not None) and (traductor_info is None):
+                lista_errores.append("ERROR: Falta el traductor en la página info")
+            elif  traductor_metadatos != traductor_info:
+                lista_errores.append("ERROR: el traductor en la pagina info (%s) no coincide con el autor en los metadatos (%s)" % (traductor_info, traductor_metadatos))
+    
+
+def get_jpg_size(jpeg):
+    '''
+    obtiene el tamaño de un jpeg, de una manera un poco chapucera pero funciona
+    '''
+    jpeg.read(2)
+    b = jpeg.read(1)
+    try:
+        while (b and ord(b) != 0xDA):
+            while (ord(b) != 0xFF): b = jpeg.read(1)
+            while (ord(b) == 0xFF): b = jpeg.read(1)
+            if (ord(b) >= 0xC0 and ord(b) <= 0xC3):
+                jpeg.read(3)
+                h, w = struct.unpack(">HH", jpeg.read(4))
+                break
+            else:
+                jpeg.read(int(struct.unpack(">H", jpeg.read(2))[0])-2)
+            b = jpeg.read(1)
+        width = int(w)
+        height = int(h)
+        return (width, height)
+    except struct.error:
+        pass
+    except ValueError:
+        pass
+
+def comprobar_size_portada():
+    ruta = tempdir + '/OEBPS/Images/cover.jpg'
+    with open(ruta, 'rb') as f:
+        cover_size = get_jpg_size(f)
+    if  cover_size != (600, 900):
+        lista_errores.append("ERROR: El tamaño de la portada (%s) es incorrecto" % cover_size)
+    
+    
 if len(sys.argv) == 1:
     Tk().withdraw() # No necesitamos un GUI completo, así que no mostramos la ventana principal
     filename = filedialog.askopenfilename() # Muestra el diálogo y devuelve el nombre del archivo seleccionado
@@ -375,19 +439,15 @@ for epub in files:
         zipf.extractall(tempdir) #descomprimimos el archivo
         zipf.close()
         
-        f = open(tempdir + 'META-INF/container.xml') #buscamos la ruta del content.opf en el container.xml
-        xmldoc = minidom.parse(f)
-        f.close()
+        with open(tempdir + 'META-INF/container.xml') as f: #buscamos la ruta del content.opf en el container.xml
+            xmldoc = minidom.parse(f)
         elem = xmldoc.getElementsByTagName('rootfile')
         attr = elem[0].getAttribute('full-path')
         dir = os.path.dirname(attr) + '/'
-        f = open(tempdir + attr, "r", encoding="utf-8") #abrimos el content.opf
-        f2 = open(tempdir + dir + 'toc.ncx', "r", encoding="utf-8") #abrimos el toc.ncx
-        #f = open(tempdir + attr, "r") #Python 2.7
-        xmldoc_opf = minidom.parse(f) #Lo parseamos y lo dejamos en memoria, ya que la mayoría de comprobaciones lo necesitan
-        xmldoc_ncx = minidom.parse(f2)
-        f.close()
-        f2.close()
+        with open(tempdir + attr, "r", encoding="utf-8") as f: #abrimos el content.opf
+            xmldoc_opf = minidom.parse(f) #Lo parseamos y lo dejamos en memoria, ya que la mayoría de comprobaciones lo necesitan        
+        with open(tempdir + dir + 'toc.ncx', "r", encoding="utf-8") as f: #abrimos el toc.ncx
+            xmldoc_ncx = minidom.parse(f)
         elem = xmldoc_opf.getElementsByTagName('manifest') #obtenemos el manifiesto y registramos todos los capitulos e imágenes
         for n in elem[0].childNodes:
             if n.nodeName == 'item':
@@ -412,6 +472,8 @@ for epub in files:
         comprobar_metadatos_obligatorios()
         comprobar_anyo_publicacion()
         comprobar_saga_en_metadatos()
+        comprobar_traductor()
+        comprobar_size_portada()
 
         #imprimir los errores
         print('EPLValidator v%s' %version)
