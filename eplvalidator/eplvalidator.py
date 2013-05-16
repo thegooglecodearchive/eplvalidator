@@ -350,7 +350,7 @@ if len(sys.argv) == 1:
     Tk().withdraw() # No necesitamos un GUI completo, así que no mostramos la ventana principal
     filename = filedialog.askopenfilename() # Muestra el diálogo y devuelve el nombre del archivo seleccionado
     files = [filename]
-    sdir = os.path.basename(filename)
+    (sdir, sfile) = os.path.split(filename)
     tempdir = sdir + '/temp/' #directorio temporal para descomprimir el epub 
     
 elif len(sys.argv) == 2:     
@@ -363,15 +363,18 @@ else:
     sys.exit() 
                 
 #BUCLE PRINCIPAL                    
+
 for epub in files: 
     sourcefile = epub
     destinationfilename = sourcefile
     if sourcefile:  
         print('Comprobando: '  + os.path.basename(sourcefile))  
+        print(tempdir)
         zipf = zipfile.ZipFile(sourcefile,"r") 
         clean_dir(tempdir) #borramos contenido del directorio temporal
         zipf.extractall(tempdir) #descomprimimos el archivo
         zipf.close()
+        
         f = open(tempdir + 'META-INF/container.xml') #buscamos la ruta del content.opf en el container.xml
         xmldoc = minidom.parse(f)
         f.close()
@@ -421,5 +424,5 @@ for epub in files:
         lImages = list()
         print("")
         shutil.rmtree(tempdir)
-
+        
 input("Presiona cualquier tecla para finalizar el programa...")
