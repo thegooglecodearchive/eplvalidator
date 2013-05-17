@@ -4,8 +4,9 @@
   * Corregida Issue 6
   * Cambiado género "Guión" por "Guion" (ambas grafías son correctas, pero esta es la que se adoptó en el listado de la web)
   * Corregidos errores ortográficos en los mensajes del validador
-  * Añadida posibilidad de ejecutar el script con un archivo como argumento
+  * Añadida posibilidad de ejecutar el script con un archivo como argumento (o arrastrando el archivo sobre el validador en Windows)
   * Implementada Issue 9
+  * Eliminados instrucciones.txt y changelog.txt del paquete. Pasan a la wiki de la página de google code
 
 ==v1.03==
   * Corregida Issue 5
