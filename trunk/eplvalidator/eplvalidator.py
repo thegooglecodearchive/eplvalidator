@@ -5,7 +5,6 @@ EPLValidator
 Created on May 16, 2013
 
 @author: betatron
-v1.03
 
 Ver changelog.txt para listado de pruebas implementadas y pendientes
 
@@ -27,18 +26,18 @@ try:
     from tkinter import Tk, filedialog
 except ImportError as exc:
     sys.stderr.write("Error: failed to import settings module ({})".format(exc))
-    pass #podemos seguir ejecutandolo sin tkinter
+    pass #podemos seguir ejecutándolo sin tkinter
 
 #Constantes globales
 #-------------------
-version = 1.03
+version = 1.04
 
 uuid_epubbase = 'urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617'
 
 #Géneros y subgéneros:
 tipo = ['Ficción', 'No Ficción']
 
-generos_ficcion = ['Guión', 'Novela', 'Poesía', 'Relato', 'Teatro']
+generos_ficcion = ['Guion', 'Novela', 'Poesía', 'Relato', 'Teatro']
 
 generos_no_ficcion = ['Crónica', 'Divulgación', 'Ensayo', 'Referencia']
 
@@ -57,17 +56,17 @@ subgeneros_no_ficcion = ['Arte', 'Autoayuda', 'Ciencias exactas', 'Ciencias natu
 
 generos = generos_ficcion + generos_no_ficcion #todos los géneros
 
-generos_y_subgeneros_ficcion = generos_ficcion + subgeneros_ficcion #todos los generos y subgeneros de ficcion
+generos_y_subgeneros_ficcion = generos_ficcion + subgeneros_ficcion #todos los generos y subgeneros de ficción
 
-generos_y_subgeneros_no_ficcion = generos_no_ficcion + subgeneros_no_ficcion #todos los generos y subgeneros de ficcion
+generos_y_subgeneros_no_ficcion = generos_no_ficcion + subgeneros_no_ficcion #todos los géneros y subgéneros de ficción
 
-#todos los generos y subgeneros EXCLUSIVOS de Ficción
+#todos los géneros y subgéneros EXCLUSIVOS de Ficción
 excl_generos_y_subgeneros_ficcion = [e for e in generos_y_subgeneros_ficcion if e not in generos_y_subgeneros_no_ficcion]
 
-#todos los generos y subgeneros EXCLUSIVOS de No Ficcion
+#todos los géneros y subgéneros EXCLUSIVOS de No Ficción
 excl_generos_y_subgeneros_no_ficcion = [e for e in generos_y_subgeneros_no_ficcion if e not in generos_y_subgeneros_ficcion]
 
-subgeneros = list(set(subgeneros_ficcion + subgeneros_no_ficcion)) #subgeneros sin repetición
+subgeneros = list(set(subgeneros_ficcion + subgeneros_no_ficcion)) #subgéneros sin repetición
 
 #idiomas aceptados hasta la fecha
 #Alemán, Catalán, Español, Euskera, Francés, Gallego, Inglés, Italiano, Mandarín, Sueco 
@@ -123,7 +122,6 @@ def recursive_zip(zipf, directory, folder=None):
             recursive_zip(zipf, os.path.join(directory, item), folder + '/' + item)
 
 #Funciones para comprobaciones en los epubs
-#------------------------------------------
 def comprobar_portada_semantics():
     elem = xmldoc_opf.getElementsByTagName('metadata') #obtiene metadatos
     for node in elem[0].childNodes:
@@ -140,11 +138,11 @@ def comprobar_generos_y_subgeneros():
             etiquetas = node.firstChild.nodeValue.split(', ')
             #comprueba que hay al menos un género
             if not set(etiquetas).intersection(generos):
-                lista_errores.append("ERROR: Falta género o genero erroneo")
+                lista_errores.append("ERROR: Falta género o género erróneo")
             #comprueba que hay al menos un subgénero
             if not set(etiquetas).intersection(subgeneros):
-                lista_errores.append("ERROR: Falta subgenero o subgénero erroneo")
-            #si se ha añadido la etiqueta Ficción, entonces comrpueba que no hay asignados géneros y subgéneros de No ficción
+                lista_errores.append("ERROR: Falta subgénero o subgénero erróneo")
+            #si se ha añadido la etiqueta Ficción, entonces comprueba que no hay asignados géneros y subgéneros de No ficción
             if tipo[0] in etiquetas:
                 if (set(etiquetas).intersection([item for item in subgeneros_no_ficcion if item not in subgeneros_ficcion])):
                     lista_errores.append("ERROR: Subgéneros de no ficción utilizado en libro de ficción")
@@ -158,7 +156,7 @@ def comprobar_generos_y_subgeneros():
                     lista_errores.append("ERROR: Géneros de ficción utilizado en libro de no ficción")
             #comprueba si hay mezclados géneros de ficción y no ficción
             if set(etiquetas).intersection(excl_generos_y_subgeneros_ficcion) and set(etiquetas).intersection(excl_generos_y_subgeneros_no_ficcion):
-                lista_errores.append("ERROR: uso simultáneo de generos de Ficción y No ficción")
+                lista_errores.append("ERROR: uso simultáneo de géneros de Ficción y No ficción")
             #Comprueba si hay alguna etiqueta que no aparece en ninguna de las listas    
             for etiq in etiquetas:
                 if etiq not in (tipo + generos + subgeneros):
@@ -166,7 +164,7 @@ def comprobar_generos_y_subgeneros():
 
 def comprobar_file_size():
     for f in locate("*.*", tempdir):
-        if os.path.getsize(f) > 300000:
+        if os.path.getsize(f) > 307200:
             lista_errores.append("ERROR: El tamaño del archivo " + os.path.basename(f) + " excece de 300 KB")
     
     
@@ -176,7 +174,7 @@ def comprobar_file_as():
         if (node.nodeName == 'dc:creator') or (node.nodeName =='dc:contributor'):
             atr_fileas = node.getAttribute('opf:file-as')
             if atr_fileas == "":
-                lista_errores.append("ERROR: Falta File-as para el autor o colaboraor " +  node.firstChild.nodeValue)
+                lista_errores.append("ERROR: Falta File-as para el autor o colaborador " +  node.firstChild.nodeValue)
 
 
 def comprobar_nombre_archivo():
@@ -245,9 +243,9 @@ def comprobar_version_coincidente(epub):
 
 def comprobar_formato_nombre_archivo():
     #[saga larga] Apellido, Nombre - Titulo (rx.x texto_opcional).epub
-    pattern1 = "\[[\w\s\-\.]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.]+ \(r\d\.\d\s?[\w\s]*\)\.epub"
+    pattern1 = "\[[\w\s\-\.]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.]+ \(r\d\.\d\s?[\w\s\-]*\)\.epub"
     #Apellido, Nombre - [saga número] Titulo (rx.x texto_opcional).epub
-    pattern2 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - \[[\w\s\-\.]+\] [\w\s\-\.]+ \(r\d\.\d\s?[\w\s]*\)\.epub"
+    pattern2 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - \[[\w\s\-\.]+\] [\w\s\-\.]+ \(r\d\.\d\s?[\w\s\-]*\)\.epub"
     #Apellido, Nombre - Titulo (rx.x texto_opcional).epub
     pattern3 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.]+ \(r\d\.\d\s?[\w\s]*\)\.epub"
     m = re.search(pattern1,epub)
@@ -298,10 +296,10 @@ def comprobar_metadatos_obligatorios():
         
     if metadatos_obligatorios != list():
         #esto es una guarrada, pero me estaba dando problemas al imprimir la lista, ya que contiene cadenas en unicode
-        metadatos_erroneos = ''
+        metadatos_erróneos = ''
         for x in metadatos_obligatorios:
-            metadatos_erroneos = metadatos_erroneos + x + ', '
-        lista_errores.append("ERROR: Los siguientes metadatos faltan o están erroneos: %s" % metadatos_erroneos[:-2])
+            metadatos_erróneos = metadatos_erróneos + x + ', '
+        lista_errores.append("ERROR: Los siguientes metadatos faltan o están erróneos: %s" % metadatos_erróneos[:-2])
 
 def get_anyo_publicacion_from_info_page():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -327,7 +325,7 @@ def comprobar_anyo_publicacion():
             anyo_info = get_anyo_publicacion_from_info_page()
             anyo_metadatos =  int(datetime.strptime(node.firstChild.nodeValue, '%Y-%m-%d').year)
             if  anyo_metadatos != anyo_info:
-                lista_errores.append("ERROR: el año de publicación en los metadatos (%s) difiere del año en la págona info (%s)" % (anyo_metadatos, anyo_info))
+                lista_errores.append("ERROR: el año de publicación en los metadatos (%s) difiere del año en la página info (%s)" % (anyo_metadatos, anyo_info))
             if date.today().year < anyo_metadatos:
                 lista_errores.append("ERROR: el año de publicación en los metadatos (%s) es posterior al año actual" % (anyo_metadatos))
 
@@ -374,7 +372,7 @@ def comprobar_traductor():
             elif (traductor_metadatos is not None) and (traductor_info is None):
                 lista_errores.append("ERROR: Falta el traductor en la página info")
             elif  traductor_metadatos != traductor_info:
-                lista_errores.append("ERROR: el traductor en la pagina info (%s) no coincide con el autor en los metadatos (%s)" % (traductor_info, traductor_metadatos))
+                lista_errores.append("ERROR: el traductor en la página info (%s) no coincide con el traductor en los metadatos (%s)" % (traductor_info, traductor_metadatos))
     
 
 def get_jpg_size(jpeg):
@@ -408,8 +406,96 @@ def comprobar_size_portada():
         cover_size = get_jpg_size(f)
     if  cover_size != (600, 900):
         lista_errores.append("ERROR: El tamaño de la portada (%s) es incorrecto" % cover_size)
+
+def get_author_from_info_page():
+    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
+    title_id = elem[3].getAttribute('idref')
+    elem = xmldoc_opf.getElementsByTagName('manifest')
+    for n in elem[0].childNodes:
+        if n.nodeName == 'item':
+            if n.getAttribute('id') == title_id:
+                title_file = n.getAttribute('href')    
+    f = open(tempdir + dir + title_file, "r", encoding="utf-8")
+    #f = open(tempdir + dir + title_file, "r") #python 2.7
+    pattern = '<p>([\w\s\.\-&;]+), [0-9]{4}</p>'
+    for line in f:
+        m = re.search(pattern, line)
+        if not m is None:
+            return m.group(1)
+
+def get_author_from_metadata():
+    elem = xmldoc_opf.getElementsByTagName('dc:creator') #obtiene metadatos
+    for node in elem:
+        if (node.getAttribute('opf:role') == 'aut'):            
+            return node.firstChild.nodeValue
+        
+def get_author_sort_from_metadata():
+    elem = xmldoc_opf.getElementsByTagName('dc:creator') #obtiene metadatos
+    for node in elem:
+        if (node.getAttribute('opf:role') == 'aut'):            
+            return node.getAttribute('opf:file-as')
+
+def file_as_to_author(autor):
+    author_sort = autor.split(', ')
+    return author_sort[1] + ' ' + author_sort[0]
+
+def get_author_from_title():
+    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
+    title_id = elem[2].getAttribute('idref')
+    elem = xmldoc_opf.getElementsByTagName('manifest')
+    for n in elem[0].childNodes:
+        if n.nodeName == 'item':
+            if n.getAttribute('id') == title_id:
+                title_file = n.getAttribute('href')    
+    f = open(tempdir + dir + title_file, "r", encoding="utf-8")
+    pattern = '<p class="tautor"><code class="sans">([\w\s\.\-&;]+)</code></p>'
+    for line in f:
+        m = re.search(pattern, line)
+        if not m is None:
+            return m.group(1)
     
+                
+def comprobar_autor():
+    '''Comprobamos que el autor coincide con el file-as y además coincide con el que aparece en la página de título e info
+    '''
+    author_title = get_author_from_title()
+    author_metadata = get_author_from_metadata()
+    author_info = get_author_from_info_page()
+    author_sort = file_as_to_author(get_author_sort_from_metadata())
+    if author_metadata != author_title:
+        lista_errores.append("ERROR: El nombre del autor en la página de titulo (%s) difiere de los metadatos (%s)" % (author_title, author_metadata))
+    if author_metadata != author_info: 
+        lista_errores.append("ERROR: El nombre del autor en la página de titulo (%s) difiere de la página info (%s)" % (author_title, author_info))
+    if author_metadata != author_sort:
+        lista_errores.append("ERROR: El nombre del autor en la página de titulo (%s) difiere del author sort (%s)" % (author_title, author_sort))
+
+def get_title_from_title_page():
+    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
+    title_id = elem[2].getAttribute('idref')
+    elem = xmldoc_opf.getElementsByTagName('manifest')
+    for n in elem[0].childNodes:
+        if n.nodeName == 'item':
+            if n.getAttribute('id') == title_id:
+                title_file = n.getAttribute('href')    
+    f = open(tempdir + dir + title_file, "r", encoding="utf-8")
+    #f = open(tempdir + dir + title_file, "r") #python 2.7
+    pattern = '<h1 class="ttitulo"><strong class="sans">([\w\s\.\-&;]+)</strong></h1>'
+    for line in f:
+        m = re.search(pattern, line)
+        if not m is None:
+            return m.group(1) 
+    lista_errores.append("ERROR: No se ha detectado correctamente el título en la página de título. Es posible que haya algún error en el formato")
+
+def get_title_from_metadata():
+    elem = xmldoc_opf.getElementsByTagName('dc:title') #obtiene metadatos
+    return elem[0].firstChild.nodeValue
     
+def comprobar_titulo():
+    titulo_metadata = get_title_from_metadata()
+    titulo_titlepage = get_title_from_title_page()
+    if titulo_metadata != titulo_titlepage:
+        lista_errores.append("ERROR: título en los metadatos (%s) difiere del título en la página de título (%s)" % (titulo_metadata, titulo_titlepage))
+         
 if len(sys.argv) == 1:
     Tk().withdraw() # No necesitamos un GUI completo, así que no mostramos la ventana principal
     filename = filedialog.askopenfilename() # Muestra el diálogo y devuelve el nombre del archivo seleccionado
@@ -419,11 +505,18 @@ if len(sys.argv) == 1:
     
 elif len(sys.argv) == 2:     
     sdir = sys.argv[1] #directorio con los epubs a procesar
-    tempdir = sdir + '/temp/' #directorio temporal para descomprimir el epub 
-    files = locate("*.epub",sdir)
-
+    if os.path.isdir(sdir):
+        tempdir = sdir + '/temp/' #directorio temporal para descomprimir el epub 
+        files = locate("*.epub",sdir)
+    elif os.path.isfile(sdir):
+        files = [sdir]
+        (sdir, sfile) = os.path.split(sdir)
+        tempdir = sdir + '/temp/' #directorio temporal para descomprimir el epub 
+    else:
+        print("Argumentos incorrectos. ABORTADO")
+        sys.exit() 
 else:
-    print("Numero de argumentos erroneo. ABORTADO")
+    print("Numero de argumentos erróneo. ABORTADO")
     sys.exit() 
                 
 #BUCLE PRINCIPAL                    
@@ -433,7 +526,6 @@ for epub in files:
     destinationfilename = sourcefile
     if sourcefile:  
         print('Comprobando: '  + os.path.basename(sourcefile))  
-        print(tempdir)
         zipf = zipfile.ZipFile(sourcefile,"r") 
         clean_dir(tempdir) #borramos contenido del directorio temporal
         zipf.extractall(tempdir) #descomprimimos el archivo
@@ -458,7 +550,7 @@ for epub in files:
                     lImages.append(os.path.join(dir, n.getAttribute('href')))
         elem = xmldoc.getElementsByTagName('spine') #get spine        
 
-        #-----Aqui iran las comprobaciones una a una
+        #-----Aquí irán las comprobaciones una a una
         comprobar_portada_semantics()    
         comprobar_generos_y_subgeneros()
         comprobar_file_size()
@@ -474,11 +566,14 @@ for epub in files:
         comprobar_saga_en_metadatos()
         comprobar_traductor()
         comprobar_size_portada()
+        comprobar_autor()
+        comprobar_titulo()
+
 
         #imprimir los errores
         print('EPLValidator v%s' %version)
         if not lista_errores:
-            print("todo es OK!")
+            print("todo está OK!")
         for e in lista_errores:
             print(e)
         lista_errores = list()
