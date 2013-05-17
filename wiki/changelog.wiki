@@ -5,6 +5,7 @@
   * Cambiado género "Guión" por "Guion" (ambas grafías son correctas, pero esta es la que se adoptó en el listado de la web)
   * Corregidos errores ortográficos en los mensajes del validador
   * Añadida posibilidad de ejecutar el script con un archivo como argumento
+  * Implementada Issue 9
 
 ==v1.03==
   * Corregida Issue 5
