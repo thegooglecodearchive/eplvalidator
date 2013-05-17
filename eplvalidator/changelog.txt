@@ -1,4 +1,8 @@
-v1.03 (TBA)
+v1.04 (TBA)
+-Corregida Issue 6: Tamaño máximo de archivo pasa a ser 307200 bytes
+-Añadido género Guión (con tilde y sin tilde), ya que ambas son correctas
+
+v1.03
 -Corregida Issue 5: Se crea carpeta vacía con el nombre del epub
 -Implementada Issue 4: Comprobar que el traductor (metadatos) coincide con el traductor en página info
 -Implementada Issue 1: Comprobar que las dimensiones de la portada son 900x600
