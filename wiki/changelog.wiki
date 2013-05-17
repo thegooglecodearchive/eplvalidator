@@ -1,0 +1,27 @@
+#registro de cambios
+
+==v1.04 (TBA)==
+  * Corregida Issue 6
+  * Cambiado género "Guión" por "Guion" (ambas grafías son correctas, pero esta es la que se adoptó en el listado de la web)
+  * Corregidos errores ortográficos en los mensajes del validador
+  * Añadida posibilidad de ejecutar el script con un archivo como argumento
+
+==v1.03==
+  * Corregida Issue 5
+  * Implementada Issue 4
+  * Implementada Issue 1
+  * Pequeñas mejoras en el código 
+
+==v1.02==
+  * Corregida detección del subgénero "Ciencias naturales" (había una mayúscula de más)
+  * Cambiada detección de "No ficción" por "No Ficción"
+  * Abortar la ejecución cuando el número de argumentos es erróneo
+
+==v1.01==
+  * Añadida pausa al finalizar la ejecución, para que no se cierre la ventana con los resultados
+  * Solucionado problema con toc.ncx que quedaba abierto
+  * Contemplada posibilidad de nombres con guion en pagina de info, para la detección del año de publicación
+  * Captura de excepciones en la importación del módulo tkinter
+
+==v1.00==
+  * Versión inicial
