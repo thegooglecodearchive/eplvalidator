@@ -30,7 +30,7 @@ except ImportError as exc:
 
 #Constantes globales
 #-------------------
-version = 1.04
+version = 1.05
 
 uuid_epubbase = 'urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617'
 
@@ -121,6 +121,16 @@ def recursive_zip(zipf, directory, folder=None):
         elif os.path.isdir(directory + '/' + item):
             recursive_zip(zipf, os.path.join(directory, item), folder + '/' + item)
 
+def file_as_to_author(autor):
+    if autor != '':
+        if autor.count(',') != 1:
+            lista_errores.append("ERROR: File-as (%s) incorrecto. Falta coma de separación o hay más de una coma" % autor)
+            return None
+        author_sort = autor.split(', ')
+        return author_sort[1] + ' ' + author_sort[0]
+    else:
+        return None
+
 #Funciones para comprobaciones en los epubs
 def comprobar_portada_semantics():
     elem = xmldoc_opf.getElementsByTagName('metadata') #obtiene metadatos
@@ -165,7 +175,7 @@ def comprobar_generos_y_subgeneros():
 def comprobar_file_size():
     for f in locate("*.*", tempdir):
         if os.path.getsize(f) > 307200:
-            lista_errores.append("ERROR: El tamaño del archivo " + os.path.basename(f) + " excece de 300 KB")
+            lista_errores.append("ERROR: El tamaño del archivo " + os.path.basename(f) + " excede de 300 KB")
     
     
 def comprobar_file_as():
@@ -243,11 +253,11 @@ def comprobar_version_coincidente(epub):
 
 def comprobar_formato_nombre_archivo():
     #[saga larga] Apellido, Nombre - Titulo (rx.x texto_opcional).epub
-    pattern1 = "\[[\w\s\-\.]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.]+ \(r\d\.\d\s?[\w\s\-]*\)\.epub"
+    pattern1 = "\[[\w\s\-\.]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
     #Apellido, Nombre - [saga número] Titulo (rx.x texto_opcional).epub
-    pattern2 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - \[[\w\s\-\.]+\] [\w\s\-\.]+ \(r\d\.\d\s?[\w\s\-]*\)\.epub"
+    pattern2 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - \[[\w\s\-\.]+\] [\w\s\-\.,]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
     #Apellido, Nombre - Titulo (rx.x texto_opcional).epub
-    pattern3 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.]+ \(r\d\.\d\s?[\w\s]*\)\.epub"
+    pattern3 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
     m = re.search(pattern1,epub)
     if m is None:
         m = re.search(pattern2, epub)
@@ -271,7 +281,8 @@ def comprobar_metadatos_obligatorios():
             if node.firstChild.nodeValue == 'Autor': #hemos olvidado sustituir el autor por defecto del epub base
                 lista_errores.append("ERROR: El autor que aparece en los metadatos es el del epub base")
             else:
-                metadatos_obligatorios.remove('autor')
+                if 'autor' in metadatos_obligatorios:
+                    metadatos_obligatorios.remove('autor')
         
         elif node.nodeName == 'dc:language':
             if node.firstChild.nodeValue not in idiomas:
@@ -367,14 +378,19 @@ def comprobar_traductor():
         if (node.getAttribute('opf:role') == 'trl'):            
             traductor_info = get_translator_from_info_page()
             traductor_metadatos =  node.firstChild.nodeValue
+            traductor_fileas = node.getAttribute('opf:file-as')
+            traductor_fileas_invertido = file_as_to_author(traductor_fileas)
+            
             if (traductor_metadatos is None) and (traductor_info is not None):
                 lista_errores.append("ERROR: Falta el traductor en los metadatos")
-            elif (traductor_metadatos is not None) and (traductor_info is None):
-                lista_errores.append("ERROR: Falta el traductor en la página info")
+            elif (traductor_metadatos is not None):
+                if (traductor_info is None):
+                    lista_errores.append("ERROR: Falta el traductor en la página info")
+                if (traductor_fileas != '') and (traductor_fileas_invertido != traductor_metadatos):
+                    lista_errores.append("ERROR: el File_as del traductor (%s) parece incorrecto al compararlo con el nombre de traductor (%s)" % (traductor_fileas, traductor_metadatos))
             elif  traductor_metadatos != traductor_info:
                 lista_errores.append("ERROR: el traductor en la página info (%s) no coincide con el traductor en los metadatos (%s)" % (traductor_info, traductor_metadatos))
     
-
 def get_jpg_size(jpeg):
     '''
     obtiene el tamaño de un jpeg, de una manera un poco chapucera pero funciona
@@ -405,7 +421,7 @@ def comprobar_size_portada():
     with open(ruta, 'rb') as f:
         cover_size = get_jpg_size(f)
     if  cover_size != (600, 900):
-        lista_errores.append("ERROR: El tamaño de la portada (%s) es incorrecto" % cover_size)
+        lista_errores.append("ERROR: El tamaño de la portada (%s) es incorrecto" % str(cover_size))
 
 def get_author_from_info_page():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -426,18 +442,18 @@ def get_author_from_info_page():
 def get_author_from_metadata():
     elem = xmldoc_opf.getElementsByTagName('dc:creator') #obtiene metadatos
     for node in elem:
-        if (node.getAttribute('opf:role') == 'aut'):            
+        if (node.getAttribute('opf:role') == 'aut'):
+            author_fileas = node.getAttribute('opf:file-as')
+            author_fileas_invertido = file_as_to_author(author_fileas)
+            if author_fileas_invertido != node.firstChild.nodeValue:
+                lista_errores.append("ERROR: el File_as del autor (%s) parece incorrecto al compararlo con el nombre de autor (%s)" % (author_fileas, node.firstChild.nodeValue))
             return node.firstChild.nodeValue
         
 def get_author_sort_from_metadata():
     elem = xmldoc_opf.getElementsByTagName('dc:creator') #obtiene metadatos
     for node in elem:
-        if (node.getAttribute('opf:role') == 'aut'):            
+        if (node.getAttribute('opf:role') == 'aut'):
             return node.getAttribute('opf:file-as')
-
-def file_as_to_author(autor):
-    author_sort = autor.split(', ')
-    return author_sort[1] + ' ' + author_sort[0]
 
 def get_author_from_title():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -463,11 +479,11 @@ def comprobar_autor():
     author_info = get_author_from_info_page()
     author_sort = file_as_to_author(get_author_sort_from_metadata())
     if author_metadata != author_title:
-        lista_errores.append("ERROR: El nombre del autor en la página de titulo (%s) difiere de los metadatos (%s)" % (author_title, author_metadata))
+        lista_errores.append("ERROR: El nombre del autor en la página de título (%s) difiere de los metadatos (%s)" % (author_title, author_metadata))
     if author_metadata != author_info: 
-        lista_errores.append("ERROR: El nombre del autor en la página de titulo (%s) difiere de la página info (%s)" % (author_title, author_info))
+        lista_errores.append("ERROR: El nombre del autor en la página de info (%s) difiere de los metadatos (%s)" % (author_info, author_metadata))
     if author_metadata != author_sort:
-        lista_errores.append("ERROR: El nombre del autor en la página de titulo (%s) difiere del author sort (%s)" % (author_title, author_sort))
+        lista_errores.append("ERROR: El nombre del autor en el author_sort (%s) difiere de los metadatos (%s)" % (author_sort, author_metadata))
 
 def get_title_from_title_page():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -477,13 +493,12 @@ def get_title_from_title_page():
         if n.nodeName == 'item':
             if n.getAttribute('id') == title_id:
                 title_file = n.getAttribute('href')    
-    f = open(tempdir + dir + title_file, "r", encoding="utf-8")
-    #f = open(tempdir + dir + title_file, "r") #python 2.7
-    pattern = '<h1 class="ttitulo"><strong class="sans">([\w\s\.\-&;]+)</strong></h1>'
-    for line in f:
-        m = re.search(pattern, line)
-        if not m is None:
-            return m.group(1) 
+    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+        pattern = '<h1 class="ttitulo"><strong class="sans">([\w\s\.\-&;,«»]+)</strong></h1>'
+        for line in f:
+            m = re.search(pattern, line)
+            if not m is None:
+                return m.group(1) 
     lista_errores.append("ERROR: No se ha detectado correctamente el título en la página de título. Es posible que haya algún error en el formato")
 
 def get_title_from_metadata():
