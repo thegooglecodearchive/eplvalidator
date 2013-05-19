@@ -1,6 +1,10 @@
 #registro de cambios
 
-==v1.04 (TBA)==
+==v1.05(TBA)==
+  * Añadida compatibilidad con el nuevo book-id del epub base 'urn:uuid:00000000-0000-0000-0000-000000000000'
+  * Corregida Issue 12
+
+==v1.04==
   * Corregida Issue 6
   * Cambiado género "Guión" por "Guion" (ambas grafías son correctas, pero esta es la que se adoptó en el listado de la web)
   * Corregidos errores ortográficos en los mensajes del validador
