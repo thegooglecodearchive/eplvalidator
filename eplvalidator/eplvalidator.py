@@ -33,6 +33,7 @@ except ImportError as exc:
 version = 1.05
 
 uuid_epubbase = 'urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617'
+uuid_epubbase_2 = 'urn:uuid:00000000-0000-0000-0000-000000000000'
 
 #Géneros y subgéneros:
 tipo = ['Ficción', 'No Ficción']
@@ -73,7 +74,7 @@ subgeneros = list(set(subgeneros_ficcion + subgeneros_no_ficcion)) #subgéneros 
 idiomas = ['de', 'ca', 'es', 'eu', 'fr', 'gl', 'en', 'it', 'zh', 'sv' ]
 
 #Otras:
-caracteres_permitidos = string.ascii_letters + string.digits + ' _-[]().,&' #Lista de caracteres permitidos en nombres de archivo
+caracteres_permitidos = string.ascii_letters + string.digits + ' _-[]().,&:' #Lista de caracteres permitidos en nombres de archivo
 
 #Variables globales
 lChapters = list() #lista con todos los capítulos del epub
@@ -199,7 +200,7 @@ def comprobar_nombre_archivos_internos():
 def comprobar_bookid():
     """comprueba que el book-id es diferente del epub-base y que es el mismo en content.opf y toc.ncx"""
     node = xmldoc_opf.getElementsByTagName('dc:identifier')
-    if node[0].firstChild.nodeValue == uuid_epubbase:
+    if (node[0].firstChild.nodeValue == uuid_epubbase) or (node[0].firstChild.nodeValue == uuid_epubbase_2):
         lista_errores.append("ERROR: el bookID coincide con el del epub base. Debe cambiarse para cada aporte")
     elif node[0].firstChild.nodeValue == "":
         lista_errores.append('ERROR: bookID no encontrado')
@@ -253,11 +254,11 @@ def comprobar_version_coincidente(epub):
 
 def comprobar_formato_nombre_archivo():
     #[saga larga] Apellido, Nombre - Titulo (rx.x texto_opcional).epub
-    pattern1 = "\[[\w\s\-\.]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
+    pattern1 = "\[[\w\s\-\.]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
     #Apellido, Nombre - [saga número] Titulo (rx.x texto_opcional).epub
-    pattern2 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - \[[\w\s\-\.]+\] [\w\s\-\.,]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
+    pattern2 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - \[[\w\s\-\.]+\] [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
     #Apellido, Nombre - Titulo (rx.x texto_opcional).epub
-    pattern3 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
+    pattern3 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
     m = re.search(pattern1,epub)
     if m is None:
         m = re.search(pattern2, epub)
@@ -494,7 +495,7 @@ def get_title_from_title_page():
             if n.getAttribute('id') == title_id:
                 title_file = n.getAttribute('href')    
     with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
-        pattern = '<h1 class="ttitulo"><strong class="sans">([\w\s\.\-&;,«»]+)</strong></h1>'
+        pattern = '<h1 class="ttitulo"><strong class="sans">([\w\s\.\-&;,«»\?¿]+)</strong></h1>'
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
