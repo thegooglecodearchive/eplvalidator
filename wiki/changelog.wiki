@@ -3,6 +3,8 @@
 ==v1.05(TBA)==
   * Añadida compatibilidad con el nuevo book-id del epub base 'urn:uuid:00000000-0000-0000-0000-000000000000'
   * Corregida Issue 12
+  * Añadido el caracter ":" a los caracteres permitidos en el título
+  * Añadidos los caracteres "¿" y "?" a los caracteres permitidos en el título (página de título y metadatos, pero no en nombre de archivo)
 
 ==v1.04==
   * Corregida Issue 6
