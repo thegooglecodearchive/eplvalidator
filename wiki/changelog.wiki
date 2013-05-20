@@ -1,6 +1,7 @@
 #registro de cambios
 
 ==v1.06(TBA)==
+  * Implementada Issue 4
 
 
 ==v1.05(20/05/2013)==
