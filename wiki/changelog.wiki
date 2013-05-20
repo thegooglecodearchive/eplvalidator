@@ -7,6 +7,7 @@
   * Añadidos los caracteres "¿" y "?" a los caracteres permitidos en el título (página de título y metadatos, pero no en nombre de archivo)
   * Permitidas fechas que incluyan mes, o mes y día en la fecha de publicación que aparece en la página info (formato yyyy[-mm[-dd]])
   * Permitido id="heading_id_X" en página de título (compatibilidad con versiones de Sigil anteriores a v0.7)
+  * Corregida Issue 10
 
 ==v1.04==
   * Corregida Issue 6
