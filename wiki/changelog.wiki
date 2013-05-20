@@ -1,6 +1,6 @@
 #registro de cambios
 
-==v1.05(TBA)==
+==v1.05(20/05/2013)==
   * Añadida compatibilidad con el nuevo book-id del epub base 'urn:uuid:00000000-0000-0000-0000-000000000000'
   * Corregida Issue 12
   * Añadido el caracter ":" a los caracteres permitidos en el título
