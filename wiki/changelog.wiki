@@ -8,6 +8,7 @@
   * Permitidas fechas que incluyan mes, o mes y día en la fecha de publicación que aparece en la página info (formato yyyy[-mm[-dd]])
   * Permitido id="heading_id_X" en página de título (compatibilidad con versiones de Sigil anteriores a v0.7)
   * Corregida Issue 10
+  * Implementada Issue 11
 
 ==v1.04==
   * Corregida Issue 6
