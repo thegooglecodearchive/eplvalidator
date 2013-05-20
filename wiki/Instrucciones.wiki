@@ -1,4 +1,5 @@
 #summary Instrucciones de uso para el script
+#labels Featured
 
 =QUE ES EPLVALIDATOR=
 Se trata de un script en python que nos ayudará a detectar gran cantidad de fallos frecuentes en los epubs antes de publicarlos en la web.
