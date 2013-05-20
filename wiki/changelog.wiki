@@ -5,6 +5,7 @@
   * Corregida Issue 12
   * Añadido el caracter ":" a los caracteres permitidos en el título
   * Añadidos los caracteres "¿" y "?" a los caracteres permitidos en el título (página de título y metadatos, pero no en nombre de archivo)
+  * Permitidas fechas que incluyan mes, o mes y día en la fecha de publicación que aparece en la página info (formato yyyy[-mm[-dd]])
 
 ==v1.04==
   * Corregida Issue 6
