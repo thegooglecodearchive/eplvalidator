@@ -2,6 +2,7 @@
 
 ==v1.06(TBA)==
   * Implementada Issue 4
+  * Añadido apóstrofe (') a los caracteres permitidos en nombre de autor (página de título, página info y metadatos)
 
 
 ==v1.05(20/05/2013)==
