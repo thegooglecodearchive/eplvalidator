@@ -29,8 +29,8 @@ except ImportError as exc:
     pass #podemos seguir ejecutándolo sin tkinter
 
 #Constantes globales
-#-------------------
-version = 1.05
+version = 1.06
+version_plantilla = 'v1.0a'
 
 uuid_epubbase = 'urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617'
 uuid_epubbase_2 = 'urn:uuid:00000000-0000-0000-0000-000000000000'
@@ -201,7 +201,7 @@ def comprobar_bookid():
     """comprueba que el book-id es diferente del epub-base y que es el mismo en content.opf y toc.ncx"""
     node = xmldoc_opf.getElementsByTagName('dc:identifier')
     if (node[0].firstChild.nodeValue == uuid_epubbase) or (node[0].firstChild.nodeValue == uuid_epubbase_2):
-        lista_errores.append("ERROR: el bookID coincide con el del epub base. Debe cambiarse para cada aporte")
+        lista_errores.append("ERROR: el bookID coincide con el del epub base. Debe cambiarse para cada nuevo aporte")
     elif node[0].firstChild.nodeValue == "":
         lista_errores.append('ERROR: bookID no encontrado')
     else:
@@ -211,15 +211,6 @@ def comprobar_bookid():
                 if n.getAttribute('content') != node[0].firstChild.nodeValue:
                     lista_errores.append('ERROR: bookID en toc.ncx diferente del bookID en content.opf')
         
-
-def comprobar_etiquetas():
-    pattern = re.compile("<[ib]>")
-    for f in lChapters:
-        for i, line in enumerate(open(tempdir + f, "r", encoding="utf-8")):
-        #for i, line in enumerate(open(tempdir + f, "r")):   #python 2.7 
-            for match in re.finditer(pattern, line):
-                lista_errores.append('ERROR: Encontrada etiqueta no permitidas en la linea %s del archivo %s' % (i+1, f))
-
 def get_version_from_filename(epub):
     pattern = "\(r([0-9]\.[0-9])[^\)]*\).epub"
     m = re.search(pattern,epub)
@@ -236,15 +227,41 @@ def get_version_from_title_page(epub):
         if n.nodeName == 'item':
             if n.getAttribute('id') == title_id:
                 title_file = n.getAttribute('href')    
-    f = open(tempdir + dir + title_file, "r", encoding="utf-8")
-    #f = open(tempdir + dir + title_file, "r") #python 2.7
-    pattern = '<p class="trevision"><strong class="sans">eP(UB|ub) r([0-9].[0-9])</strong></p>'
-    for line in f:
-        m = re.search(pattern, line)
-        if not m is None:
-            return m.group(2) 
+    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+        pattern = '<p class="trevision"><strong class="sans">eP(UB|ub) r([0-9].[0-9])</strong></p>'
+        for line in f:
+            m = re.search(pattern, line)
+            if not m is None:
+                return m.group(2) 
     lista_errores.append("ERROR: No se ha detectado correctamente la versión en la página de título. Es posible que haya algún error en el formato")
-   
+
+def get_modification_date_from_title_page():
+    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
+    title_id = elem[2].getAttribute('idref')
+    elem = xmldoc_opf.getElementsByTagName('manifest')
+    for n in elem[0].childNodes:
+        if n.nodeName == 'item':
+            if n.getAttribute('id') == title_id:
+                title_file = n.getAttribute('href')    
+    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+        pattern = '<p class="tfirma"><strong class="sans">[^<]+</strong> <code class="tfecha sans">(\d{2}\.\d{2}\.\d{2})</code></p>'
+        for line in f:
+            m = re.search(pattern, line)
+            if not m is None:
+                return datetime.strptime(m.group(1), '%d.%m.%y')
+    lista_errores.append("ERROR: No se ha detectado correctamente la fecha en la página de título. Es posible que haya algún error en el formato")
+
+def get_modification_date_from_metadata():
+    elem = xmldoc_opf.getElementsByTagName('dc:date') #obtiene metadatos
+    for node in elem:
+        if (node.getAttribute('opf:event') == 'modification'):
+            return datetime.strptime(node.firstChild.nodeValue,'%Y-%m-%d')
+
+def comprobar_fecha_modificacion():
+    mdate_metadata = get_modification_date_from_metadata()
+    mdate_title = get_modification_date_from_title_page()    
+    if mdate_metadata != mdate_title:
+        lista_errores.append("ERROR: La fecha de modificación en la página de título (%s) difiere de la fecha de modificación de los metadatos (%s)" % (mdate_title.date(), mdate_metadata.date()))
 
 def comprobar_version_coincidente(epub):
     v_nombre_archivo = get_version_from_filename(epub)
@@ -253,19 +270,22 @@ def comprobar_version_coincidente(epub):
         lista_errores.append('ERROR: La versión en nombre de archivo (%s) difiere de la versión en la página de título (%s)' % (v_nombre_archivo, v_pagina_titulo))
 
 def comprobar_formato_nombre_archivo():
+    
+    patterns = list()
     #[saga larga] Apellido, Nombre - Titulo (rx.x texto_opcional).epub
-    pattern1 = "\[[\w\s\-\.]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
+    patterns.append("\[[\w\s\-\.]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub")
     #Apellido, Nombre - [saga número] Titulo (rx.x texto_opcional).epub
-    pattern2 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - \[[\w\s\-\.]+\] [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
+    patterns.append("([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - \[[\w\s\-\.]+\] [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub")
     #Apellido, Nombre - Titulo (rx.x texto_opcional).epub
-    pattern3 = "([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub"
-    m = re.search(pattern1,epub)
-    if m is None:
-        m = re.search(pattern2, epub)
-        if m is None:
-            m = re.search(pattern3, epub)
-            if m is None:
-                lista_errores.append("ERROR: El formato del nombre de archivo no es correcto")
+    patterns.append("([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub")
+    #[saga larga] [subsaga número] Apellido, Nombre - Titulo (rx.x texto_opcional).epub
+    patterns.append("\[[\w\s\-\.]+\] [[\w\s\-\.]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub")
+
+    for p in patterns:
+        m = re.search(p,epub)
+        if m is not None:
+            return True
+    lista_errores.append("ERROR: El formato del nombre de archivo no es correcto")
 
 def comprobar_metadatos_obligatorios():
     elem = xmldoc_opf.getElementsByTagName('metadata') #obtiene metadatos
@@ -321,13 +341,12 @@ def get_anyo_publicacion_from_info_page():
         if n.nodeName == 'item':
             if n.getAttribute('id') == title_id:
                 title_file = n.getAttribute('href')    
-    f = open(tempdir + dir + title_file, "r", encoding="utf-8")
-    #f = open(tempdir + dir + title_file, "r") #python 2.7
-    pattern = '<p>[\w\s\.\-&;]+, (\d{4})</p>'
-    for line in f:
-        m = re.search(pattern, line)
-        if not m is None:
-            return int(m.group(1))
+    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+        pattern = '<p>[\w\s\.\-&;\']+, ([0-9]{4})((-|/)(0[1-9]|1[0-2])((-|/)(0[1-9]|[1-2][0-9]|3[0-1]))?)?</p>'
+        for line in f:
+            m = re.search(pattern, line)
+            if not m is None:
+                return int(m.group(1))
     lista_errores.append("ERROR: No se ha detectado correctamente el año de publicación en la página info. Es posible que haya algún error en el formato")
 
 def comprobar_anyo_publicacion():
@@ -365,13 +384,12 @@ def get_translator_from_info_page():
         if n.nodeName == 'item':
             if n.getAttribute('id') == title_id:
                 title_file = n.getAttribute('href')    
-    f = open(tempdir + dir + title_file, "r", encoding="utf-8")
-    #f = open(tempdir + dir + title_file, "r") #python 2.7
-    pattern = '<p>Traducción: ([\w\s\.\-&;]+)( \([0-9]{4}\))?</p>'
-    for line in f:
-        m = re.search(pattern, line)
-        if not m is None:
-            return m.group(1)
+    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+        pattern = '<p>Traducción: ([\w\s\.\-&;]+)( \([0-9]{4}\))?</p>'
+        for line in f:
+            m = re.search(pattern, line)
+            if not m is None:
+                return m.group(1)
 
 def comprobar_traductor():
     elem = xmldoc_opf.getElementsByTagName('dc:contributor') #obtiene metadatos
@@ -432,13 +450,12 @@ def get_author_from_info_page():
         if n.nodeName == 'item':
             if n.getAttribute('id') == title_id:
                 title_file = n.getAttribute('href')    
-    f = open(tempdir + dir + title_file, "r", encoding="utf-8")
-    #f = open(tempdir + dir + title_file, "r") #python 2.7
-    pattern = '<p>([\w\s\.\-&;]+), [0-9]{4}</p>'
-    for line in f:
-        m = re.search(pattern, line)
-        if not m is None:
-            return m.group(1)
+    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+        pattern = "<p>([\w\s\.\-&;']+), ([0-9]{4})"
+        for line in f:
+            m = re.search(pattern, line)
+            if not m is None:
+                return m.group(1)
 
 def get_author_from_metadata():
     elem = xmldoc_opf.getElementsByTagName('dc:creator') #obtiene metadatos
@@ -464,12 +481,12 @@ def get_author_from_title():
         if n.nodeName == 'item':
             if n.getAttribute('id') == title_id:
                 title_file = n.getAttribute('href')    
-    f = open(tempdir + dir + title_file, "r", encoding="utf-8")
-    pattern = '<p class="tautor"><code class="sans">([\w\s\.\-&;]+)</code></p>'
-    for line in f:
-        m = re.search(pattern, line)
-        if not m is None:
-            return m.group(1)
+    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+        pattern = '<p class="tautor"><code class="sans">([\w\s\.\-&;\']+)</code></p>'
+        for line in f:
+            m = re.search(pattern, line)
+            if not m is None:
+                return m.group(1)
     
                 
 def comprobar_autor():
@@ -484,7 +501,7 @@ def comprobar_autor():
     if author_metadata != author_info: 
         lista_errores.append("ERROR: El nombre del autor en la página de info (%s) difiere de los metadatos (%s)" % (author_info, author_metadata))
     if author_metadata != author_sort:
-        lista_errores.append("ERROR: El nombre del autor en el author_sort (%s) difiere de los metadatos (%s)" % (author_sort, author_metadata))
+        lista_errores.append("ERROR: El nombre del autor en el File-As (%s) parece no coincidir con el del autor (%s)" % (author_sort, author_metadata))
 
 def get_title_from_title_page():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -495,11 +512,11 @@ def get_title_from_title_page():
             if n.getAttribute('id') == title_id:
                 title_file = n.getAttribute('href')    
     with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
-        pattern = '<h1 class="ttitulo"><strong class="sans">([\w\s\.\-&;,«»\?¿]+)</strong></h1>'
+        pattern = '<h1 class="ttitulo"( id="heading_id_[0-9]")?><strong class="sans">([\w\s\.\-&;,«»\?¿]+)</strong></h1>'
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
-                return m.group(1) 
+                return m.group(2) 
     lista_errores.append("ERROR: No se ha detectado correctamente el título en la página de título. Es posible que haya algún error en el formato")
 
 def get_title_from_metadata():
@@ -511,8 +528,20 @@ def comprobar_titulo():
     titulo_titlepage = get_title_from_title_page()
     if titulo_metadata != titulo_titlepage:
         lista_errores.append("ERROR: título en los metadatos (%s) difiere del título en la página de título (%s)" % (titulo_metadata, titulo_titlepage))
+
+def comprobar_etiquetas_basura():
+    patterns = list()
+    patterns.append('<[ib]>')
+    patterns.append('CDATA')
+    patterns.append('class="((sgc)|(calibre))[^"]*"')
+    for f in lChapters:
+        for i, line in enumerate(open(tempdir + f, "r", encoding="utf-8")):
+            for pattern in patterns:
+                for match in re.finditer(pattern, line):
+                    lista_errores.append('ERROR: Encontrada etiqueta o estilo no permitido (%s) en la linea %s del archivo %s' % (match.group(0), i+1, f))
          
 if len(sys.argv) == 1:
+    #interfaz gráfica para seleccionar archivo
     Tk().withdraw() # No necesitamos un GUI completo, así que no mostramos la ventana principal
     filename = filedialog.askopenfilename() # Muestra el diálogo y devuelve el nombre del archivo seleccionado
     files = [filename]
@@ -532,9 +561,11 @@ elif len(sys.argv) == 2:
         print("Argumentos incorrectos. ABORTADO")
         sys.exit() 
 else:
-    print("Numero de argumentos erróneo. ABORTADO")
+    print("Número de argumentos erróneo. ABORTADO")
     sys.exit() 
-                
+
+epubs_correctos = 0
+epubs_erroneos = 0           
 #BUCLE PRINCIPAL                    
 
 for epub in files: 
@@ -574,7 +605,7 @@ for epub in files:
         comprobar_nombre_archivo()
         comprobar_nombre_archivos_internos()
         comprobar_bookid() 
-        comprobar_etiquetas()
+        comprobar_etiquetas_basura()
         comprobar_version_coincidente(epub)     
         comprobar_formato_nombre_archivo()  
         comprobar_metadatos_obligatorios()
@@ -584,18 +615,25 @@ for epub in files:
         comprobar_size_portada()
         comprobar_autor()
         comprobar_titulo()
-
+        comprobar_fecha_modificacion()
 
         #imprimir los errores
         print('EPLValidator v%s' %version)
-        if not lista_errores:
+        if lista_errores:
+            epubs_erroneos +=1
+            for e in lista_errores:
+                print(e)
+        else:
+            epubs_correctos +=1
             print("todo está OK!")
-        for e in lista_errores:
-            print(e)
+
         lista_errores = list()
         lChapters = list()
         lImages = list()
         print("")
         shutil.rmtree(tempdir)
+
+print("Total epubs correctos: " + str(epubs_correctos))
+print("Total epubs con errores: " + str(epubs_erroneos))
         
 input("Presiona cualquier tecla para finalizar el programa...")
