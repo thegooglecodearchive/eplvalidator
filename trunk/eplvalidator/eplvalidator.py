@@ -32,6 +32,54 @@ except ImportError as exc:
 version = 1.06
 version_plantilla = 'v1.0a'
 
+#errores
+listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
+                2 : "Falta marcar cover.jpg como imagen de portada",
+                3 : "Falta género o género erróneo",
+                4 : "Falta subgénero o subgénero erróneo",
+                5 : "Subgéneros de no ficción utilizado en libro de ficción",
+                6 : "Géneros de no ficción utilizado en libro de ficción",
+                7 : "Subgéneros de ficción utilizado en libro de no ficción",
+                8 : "Géneros de ficción utilizado en libro de no ficción",
+                9 : "Uso simultáneo de géneros de Ficción y No ficción",
+                10 : "Género (%s) no está en la lista de géneros aceptados por la web",
+                11 : "El tamaño del archivo interno %s excede de 300 KB",
+                12 : "Falta File-as (Ordenar como) para el autor o colaborador %s",
+                13 : "Caracteres no permitidos en nombre de archivo",
+                14 : "Caracteres no permitidos en nombre de archivo interno %s",
+                15 : "El bookID coincide con el del epub base. Debe cambiarse para cada nuevo aporte",
+                16 : 'BookID no encontrado',
+                17 : 'BookID en toc.ncx y content.opf son diferentes',
+                18 : "Versión no encontrada en el nombre de archivo",
+                19 : "No se ha detectado correctamente la versión en la página de título. Es posible que haya algún error en el formato",
+                20 : "No se ha detectado correctamente la fecha en la página de título. Es posible que haya algún error en el formato",
+                21 : "No se ha detectado correctamente la fecha de modificación en los metadatos",
+                22 : "No se ha detectado correctamente la fecha de modificación en la página de título",
+                23 : "La fecha de modificación en la página de título (%s) difiere de la fecha de modificación de los metadatos (%s)",
+                24 : 'La versión en nombre de archivo (%s) difiere de la versión en la página de título (%s)',
+                25 : "El formato del nombre de archivo no es correcto",
+                26 : "El título que aparece en los metadatos es el del epub base",
+                27 : "El autor que aparece en los metadatos es el del epub base",
+                28 : "El idioma no es uno de los aceptados actualmente en la web",
+                29 : "Editorial incorrecta. Debe ser ePubLibre (respetando las mayúsculas)",
+                30 : "Los siguientes metadatos faltan o están erróneos: %s",
+                31 : "No se ha detectado correctamente el año de publicación en la página info. Es posible que haya algún error en el formato",
+                32 : "El año de publicación en los metadatos (%s) difiere del año en la página info (%s)",
+                33 : "El año de publicación en los metadatos (%s) es posterior al año actual",
+                34 : 'No se ha indicado la saga en los metadatos mediante la etiqueta <meta content="XXX" name="calibre:series"/>',
+                35 : "Falta el traductor en los metadatos",
+                36 : "Falta el traductor en la página info",
+                37 : "El File_as (Ordenar como) del traductor (%s) parece incorrecto al compararlo con el nombre de traductor (%s)",
+                38 : "El traductor en la página info (%s) no coincide con el traductor en los metadatos (%s)",
+                39 : "Hay algún problema con el formato del archivo cover.jpg. No se ha podido detectar su tamaño",
+                40 : "El tamaño de la portada (%s) es incorrecto. Debe ser 600 x 900",
+                41 : "El File_as (Ordenar como) del autor (%s) parece incorrecto al compararlo con el nombre de autor (%s)",
+                42 : "El nombre del autor en la página de título (%s) difiere de los metadatos (%s)",
+                43 : "El nombre del autor en la página de info (%s) difiere de los metadatos (%s)",
+                44 : "No se ha detectado correctamente el título en la página de título. Es posible que haya algún error en el formato",
+                45 : "Título en los metadatos (%s) difiere del título en la página de título (%s)",
+                46 : 'Encontrada etiqueta o estilo no permitido (%s) en la linea %s del archivo %s'}
+
 uuid_epubbase = 'urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617'
 uuid_epubbase_2 = 'urn:uuid:00000000-0000-0000-0000-000000000000'
 
@@ -124,8 +172,8 @@ def recursive_zip(zipf, directory, folder=None):
 
 def file_as_to_author(autor):
     if autor != '':
-        if autor.count(',') != 1:
-            lista_errores.append("ERROR: File-as (%s) incorrecto. Falta coma de separación o hay más de una coma" % autor)
+        if autor.count(',') < 1:
+            lista_errores.append('ERROR 001: ' + listaerrores[1] % autor)
             return None
         author_sort = autor.split(', ')
         return author_sort[1] + ' ' + author_sort[0]
@@ -140,7 +188,7 @@ def comprobar_portada_semantics():
             if node.getAttribute('name') == 'cover':
                 if node.getAttribute('content') == 'cover.jpg':
                     return True
-    lista_errores.append("ERROR: Falta marcar cover.jpg como imagen de portada")
+    lista_errores.append('ERROR 002: ' + listaerrores[2])
 
 def comprobar_generos_y_subgeneros():
     elem = xmldoc_opf.getElementsByTagName('metadata') #obtiene metadatos
@@ -149,34 +197,34 @@ def comprobar_generos_y_subgeneros():
             etiquetas = node.firstChild.nodeValue.split(', ')
             #comprueba que hay al menos un género
             if not set(etiquetas).intersection(generos):
-                lista_errores.append("ERROR: Falta género o género erróneo")
+                lista_errores.append('ERROR 003: ' + listaerrores[3])
             #comprueba que hay al menos un subgénero
             if not set(etiquetas).intersection(subgeneros):
-                lista_errores.append("ERROR: Falta subgénero o subgénero erróneo")
+                lista_errores.append('ERROR 004: ' + listaerrores[4])
             #si se ha añadido la etiqueta Ficción, entonces comprueba que no hay asignados géneros y subgéneros de No ficción
             if tipo[0] in etiquetas:
                 if (set(etiquetas).intersection([item for item in subgeneros_no_ficcion if item not in subgeneros_ficcion])):
-                    lista_errores.append("ERROR: Subgéneros de no ficción utilizado en libro de ficción")
+                    lista_errores.append('ERROR 005: ' + listaerrores[5])
                 if set(etiquetas).intersection(generos_no_ficcion):
-                    lista_errores.append("ERROR: Géneros de no ficción utilizado en libro de ficción")
+                    lista_errores.append('ERROR 006: ' + listaerrores[6])
             #si se ha añadido la etiqueta No ficción, entonces comrpueba que no hay asignados géneros y subgéneros de Ficción
             if tipo[1] in etiquetas:
                 if (set(etiquetas).intersection([item for item in subgeneros_ficcion if item not in subgeneros_no_ficcion])):
-                    lista_errores.append("ERROR: Subgéneros de ficción utilizado en libro de no ficción")
+                    lista_errores.append('ERROR 007: ' + listaerrores[7])
                 if set(etiquetas).intersection(generos_ficcion):
-                    lista_errores.append("ERROR: Géneros de ficción utilizado en libro de no ficción")
+                    lista_errores.append('ERROR 008: ' + listaerrores[8])
             #comprueba si hay mezclados géneros de ficción y no ficción
             if set(etiquetas).intersection(excl_generos_y_subgeneros_ficcion) and set(etiquetas).intersection(excl_generos_y_subgeneros_no_ficcion):
-                lista_errores.append("ERROR: uso simultáneo de géneros de Ficción y No ficción")
+                lista_errores.append()
             #Comprueba si hay alguna etiqueta que no aparece en ninguna de las listas    
             for etiq in etiquetas:
                 if etiq not in (tipo + generos + subgeneros):
-                    lista_errores.append("ERROR: Género '" + etiq + "' no está en la lista de géneros aceptados por la web")
+                    lista_errores.append('ERROR 010: ' + listaerrores[10] % etiq)
 
 def comprobar_file_size():
     for f in locate("*.*", tempdir):
         if os.path.getsize(f) > 307200:
-            lista_errores.append("ERROR: El tamaño del archivo " + os.path.basename(f) + " excede de 300 KB")
+            lista_errores.append('ERROR 011: ' + listaerrores[11] % os.path.basename(f))
     
     
 def comprobar_file_as():
@@ -185,37 +233,37 @@ def comprobar_file_as():
         if (node.nodeName == 'dc:creator') or (node.nodeName =='dc:contributor'):
             atr_fileas = node.getAttribute('opf:file-as')
             if atr_fileas == "":
-                lista_errores.append("ERROR: Falta File-as para el autor o colaborador " +  node.firstChild.nodeValue)
+                lista_errores.append('ERROR 012: ' + listaerrores[12] %  node.firstChild.nodeValue)
 
 
 def comprobar_nombre_archivo():
     if not all([c in caracteres_permitidos for c in os.path.basename(sourcefile)]):
-        lista_errores.append("ERROR: Caracteres no permitidos en nombre de archivo")
+        lista_errores.append('ERROR 013: ' + listaerrores[13])
 
 def comprobar_nombre_archivos_internos():
     for f in locate("*.*", tempdir):
         if not all([c in caracteres_permitidos for c in os.path.basename(f)]):
-            lista_errores.append("ERROR: Caracteres no permitidos en nombre de archivo interno " + os.path.basename(f))
+            lista_errores.append('ERROR 014: ' + listaerrores[14] % os.path.basename(f))
 
 def comprobar_bookid():
     """comprueba que el book-id es diferente del epub-base y que es el mismo en content.opf y toc.ncx"""
     node = xmldoc_opf.getElementsByTagName('dc:identifier')
     if (node[0].firstChild.nodeValue == uuid_epubbase) or (node[0].firstChild.nodeValue == uuid_epubbase_2):
-        lista_errores.append("ERROR: el bookID coincide con el del epub base. Debe cambiarse para cada nuevo aporte")
+        lista_errores.append('ERROR 015: ' + listaerrores[15])
     elif node[0].firstChild.nodeValue == "":
-        lista_errores.append('ERROR: bookID no encontrado')
+        lista_errores.append('ERROR 016: ' + listaerrores[16])
     else:
         nodes_ncx = xmldoc_ncx.getElementsByTagName('meta')
         for n in nodes_ncx:
             if n.getAttribute('name') == 'dtb:uid':
                 if n.getAttribute('content') != node[0].firstChild.nodeValue:
-                    lista_errores.append('ERROR: bookID en toc.ncx diferente del bookID en content.opf')
+                    lista_errores.append('ERROR 017: ' + listaerrores[17])
         
 def get_version_from_filename(epub):
     pattern = "\(r([0-9]\.[0-9])[^\)]*\).epub"
     m = re.search(pattern,epub)
     if m is None:
-        print("ERROR: version no encontrada en el nombre de archivo")
+        lista_errores.append('ERROR 018: ' + listaerrores[18])
     else:
         return m.group(1) 
     
@@ -233,7 +281,7 @@ def get_version_from_title_page(epub):
             m = re.search(pattern, line)
             if not m is None:
                 return m.group(2) 
-    lista_errores.append("ERROR: No se ha detectado correctamente la versión en la página de título. Es posible que haya algún error en el formato")
+    lista_errores.append('ERROR 019: ' + listaerrores[19])
 
 def get_modification_date_from_title_page():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -249,7 +297,7 @@ def get_modification_date_from_title_page():
             m = re.search(pattern, line)
             if not m is None:
                 return datetime.strptime(m.group(1), '%d.%m.%y')
-    lista_errores.append("ERROR: No se ha detectado correctamente la fecha en la página de título. Es posible que haya algún error en el formato")
+    lista_errores.append('ERROR 020: ' + listaerrores[20])
 
 def get_modification_date_from_metadata():
     elem = xmldoc_opf.getElementsByTagName('dc:date') #obtiene metadatos
@@ -261,13 +309,18 @@ def comprobar_fecha_modificacion():
     mdate_metadata = get_modification_date_from_metadata()
     mdate_title = get_modification_date_from_title_page()    
     if mdate_metadata != mdate_title:
-        lista_errores.append("ERROR: La fecha de modificación en la página de título (%s) difiere de la fecha de modificación de los metadatos (%s)" % (mdate_title.date(), mdate_metadata.date()))
+        if mdate_metadata is None:
+            lista_errores.append('ERROR 021: ' + listaerrores[21])
+        elif mdate_title is None:
+            lista_errores.append('ERROR 022: ' + listaerrores[22])
+        else:
+            lista_errores.append('ERROR 023: ' + listaerrores[23] % (mdate_title.date(), mdate_metadata.date()))
 
 def comprobar_version_coincidente(epub):
     v_nombre_archivo = get_version_from_filename(epub)
     v_pagina_titulo = get_version_from_title_page(epub)
     if  v_nombre_archivo != v_pagina_titulo:
-        lista_errores.append('ERROR: La versión en nombre de archivo (%s) difiere de la versión en la página de título (%s)' % (v_nombre_archivo, v_pagina_titulo))
+        lista_errores.append('ERROR 024: ' + listaerrores[24] % (v_nombre_archivo, v_pagina_titulo))
 
 def comprobar_formato_nombre_archivo():
     
@@ -285,7 +338,7 @@ def comprobar_formato_nombre_archivo():
         m = re.search(p,epub)
         if m is not None:
             return True
-    lista_errores.append("ERROR: El formato del nombre de archivo no es correcto")
+    lista_errores.append('ERROR 025: ' + listaerrores[25])
 
 def comprobar_metadatos_obligatorios():
     elem = xmldoc_opf.getElementsByTagName('metadata') #obtiene metadatos
@@ -294,26 +347,26 @@ def comprobar_metadatos_obligatorios():
         
         if node.nodeName == 'dc:title':
             if node.firstChild.nodeValue == 'Título': #hemos olvidado sustituir el título por defecto del epub base
-                lista_errores.append("ERROR: El título que aparece en los metadatos es el del epub base")
+                lista_errores.append('ERROR 026: ' + listaerrores[26])
             else:
                 metadatos_obligatorios.remove('título')
         
         elif (node.nodeName == 'dc:creator') and (node.getAttribute('opf:role') == 'aut'):
             if node.firstChild.nodeValue == 'Autor': #hemos olvidado sustituir el autor por defecto del epub base
-                lista_errores.append("ERROR: El autor que aparece en los metadatos es el del epub base")
+                lista_errores.append('ERROR 027: ' + listaerrores[27])
             else:
                 if 'autor' in metadatos_obligatorios:
                     metadatos_obligatorios.remove('autor')
         
         elif node.nodeName == 'dc:language':
             if node.firstChild.nodeValue not in idiomas:
-                lista_errores.append("ERROR: El idioma no es uno de los aceptados actualmente en la web")
+                lista_errores.append('ERROR 028: ' + listaerrores[28])
             else:
                 metadatos_obligatorios.remove('idioma')
         
         elif node.nodeName == 'dc:publisher':
             if node.firstChild.nodeValue != 'ePubLibre':
-                lista_errores.append("ERROR: Editorial incorrecta. Debe ser ePubLibre")
+                lista_errores.append('ERROR 029: ' + listaerrores[29])
             else:
                 metadatos_obligatorios.remove('editorial')
                 
@@ -331,7 +384,7 @@ def comprobar_metadatos_obligatorios():
         metadatos_erróneos = ''
         for x in metadatos_obligatorios:
             metadatos_erróneos = metadatos_erróneos + x + ', '
-        lista_errores.append("ERROR: Los siguientes metadatos faltan o están erróneos: %s" % metadatos_erróneos[:-2])
+        lista_errores.append('ERROR 030: ' + listaerrores[30] % metadatos_erróneos[:-2])
 
 def get_anyo_publicacion_from_info_page():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -347,7 +400,7 @@ def get_anyo_publicacion_from_info_page():
             m = re.search(pattern, line)
             if not m is None:
                 return int(m.group(1))
-    lista_errores.append("ERROR: No se ha detectado correctamente el año de publicación en la página info. Es posible que haya algún error en el formato")
+    lista_errores.append('ERROR 031: ' + listaerrores[31])
 
 def comprobar_anyo_publicacion():
     elem = xmldoc_opf.getElementsByTagName('metadata') #obtiene metadatos
@@ -356,9 +409,9 @@ def comprobar_anyo_publicacion():
             anyo_info = get_anyo_publicacion_from_info_page()
             anyo_metadatos =  int(datetime.strptime(node.firstChild.nodeValue, '%Y-%m-%d').year)
             if  anyo_metadatos != anyo_info:
-                lista_errores.append("ERROR: el año de publicación en los metadatos (%s) difiere del año en la página info (%s)" % (anyo_metadatos, anyo_info))
+                lista_errores.append('ERROR 032: ' + listaerrores[32] % (anyo_metadatos, anyo_info))
             if date.today().year < anyo_metadatos:
-                lista_errores.append("ERROR: el año de publicación en los metadatos (%s) es posterior al año actual" % (anyo_metadatos))
+                lista_errores.append('ERROR 033: ' + listaerrores[33] % (anyo_metadatos))
 
 def has_saga_in_filename():
     pattern = "\[[\w\s]+\]"
@@ -374,7 +427,7 @@ def comprobar_saga_en_metadatos():
         elem = xmldoc_opf.getElementsByTagName('meta') #obtiene metadatos
         nodes = [node for node in elem if node.getAttribute('name') == 'calibre:series']
         if nodes == list():
-            lista_errores.append('WARNING: No se ha indicado la saga en los metadatos mediante la etiqueta <meta content="XXX" name="calibre:series"/>')
+            lista_errores.append('ERROR 034: ' + listaerrores[34])
 
 def get_translator_from_info_page():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -401,14 +454,14 @@ def comprobar_traductor():
             traductor_fileas_invertido = file_as_to_author(traductor_fileas)
             
             if (traductor_metadatos is None) and (traductor_info is not None):
-                lista_errores.append("ERROR: Falta el traductor en los metadatos")
+                lista_errores.append('ERROR 035: ' + listaerrores[35])
             elif (traductor_metadatos is not None):
                 if (traductor_info is None):
-                    lista_errores.append("ERROR: Falta el traductor en la página info")
+                    lista_errores.append('ERROR 036: ' + listaerrores[36])
                 if (traductor_fileas != '') and (traductor_fileas_invertido != traductor_metadatos):
-                    lista_errores.append("ERROR: el File_as del traductor (%s) parece incorrecto al compararlo con el nombre de traductor (%s)" % (traductor_fileas, traductor_metadatos))
+                    lista_errores.append('ERROR 037: ' + listaerrores[37] % (traductor_fileas, traductor_metadatos))
             elif  traductor_metadatos != traductor_info:
-                lista_errores.append("ERROR: el traductor en la página info (%s) no coincide con el traductor en los metadatos (%s)" % (traductor_info, traductor_metadatos))
+                lista_errores.append('ERROR 038: ' + listaerrores[38] % (traductor_info, traductor_metadatos))
     
 def get_jpg_size(jpeg):
     '''
@@ -427,9 +480,13 @@ def get_jpg_size(jpeg):
             else:
                 jpeg.read(int(struct.unpack(">H", jpeg.read(2))[0])-2)
             b = jpeg.read(1)
-        width = int(w)
-        height = int(h)
-        return (width, height)
+        try:
+            width = int(w)
+            height = int(h)
+            return (width, height)
+        except NameError:
+            lista_errores.append('ERROR 039: ' + listaerrores[39])
+            pass
     except struct.error:
         pass
     except ValueError:
@@ -440,7 +497,7 @@ def comprobar_size_portada():
     with open(ruta, 'rb') as f:
         cover_size = get_jpg_size(f)
     if  cover_size != (600, 900):
-        lista_errores.append("ERROR: El tamaño de la portada (%s) es incorrecto" % str(cover_size))
+        lista_errores.append('ERROR 040: ' + listaerrores[40] % str(cover_size))
 
 def get_author_from_info_page():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -464,7 +521,7 @@ def get_author_from_metadata():
             author_fileas = node.getAttribute('opf:file-as')
             author_fileas_invertido = file_as_to_author(author_fileas)
             if author_fileas_invertido != node.firstChild.nodeValue:
-                lista_errores.append("ERROR: el File_as del autor (%s) parece incorrecto al compararlo con el nombre de autor (%s)" % (author_fileas, node.firstChild.nodeValue))
+                lista_errores.append('ERROR 041: ' + listaerrores[41] % (author_fileas, node.firstChild.nodeValue))
             return node.firstChild.nodeValue
         
 def get_author_sort_from_metadata():
@@ -495,13 +552,11 @@ def comprobar_autor():
     author_title = get_author_from_title()
     author_metadata = get_author_from_metadata()
     author_info = get_author_from_info_page()
-    author_sort = file_as_to_author(get_author_sort_from_metadata())
+    #author_sort = file_as_to_author(get_author_sort_from_metadata())
     if author_metadata != author_title:
-        lista_errores.append("ERROR: El nombre del autor en la página de título (%s) difiere de los metadatos (%s)" % (author_title, author_metadata))
+        lista_errores.append('ERROR 042: ' + listaerrores[42] % (author_title, author_metadata))
     if author_metadata != author_info: 
-        lista_errores.append("ERROR: El nombre del autor en la página de info (%s) difiere de los metadatos (%s)" % (author_info, author_metadata))
-    if author_metadata != author_sort:
-        lista_errores.append("ERROR: El nombre del autor en el File-As (%s) parece no coincidir con el del autor (%s)" % (author_sort, author_metadata))
+        lista_errores.append('ERROR 043: ' + listaerrores[43] % (author_info, author_metadata))
 
 def get_title_from_title_page():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -512,12 +567,12 @@ def get_title_from_title_page():
             if n.getAttribute('id') == title_id:
                 title_file = n.getAttribute('href')    
     with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
-        pattern = '<h1 class="ttitulo"( id="heading_id_[0-9]")?><strong class="sans">([\w\s\.\-&;,«»\?¿]+)</strong></h1>'
+        pattern = '<h1 class="ttitulo"( id="heading_id_[0-9]")?><strong class="sans">([\w\s\.\-&;:,«»\?¿\(\)]+)</strong></h1>'
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
                 return m.group(2) 
-    lista_errores.append("ERROR: No se ha detectado correctamente el título en la página de título. Es posible que haya algún error en el formato")
+    lista_errores.append('ERROR 044: ' + listaerrores[44])
 
 def get_title_from_metadata():
     elem = xmldoc_opf.getElementsByTagName('dc:title') #obtiene metadatos
@@ -527,7 +582,7 @@ def comprobar_titulo():
     titulo_metadata = get_title_from_metadata()
     titulo_titlepage = get_title_from_title_page()
     if titulo_metadata != titulo_titlepage:
-        lista_errores.append("ERROR: título en los metadatos (%s) difiere del título en la página de título (%s)" % (titulo_metadata, titulo_titlepage))
+        lista_errores.append('ERROR 045: ' + listaerrores[45] % (titulo_metadata, titulo_titlepage))
 
 def comprobar_etiquetas_basura():
     patterns = list()
@@ -538,7 +593,7 @@ def comprobar_etiquetas_basura():
         for i, line in enumerate(open(tempdir + f, "r", encoding="utf-8")):
             for pattern in patterns:
                 for match in re.finditer(pattern, line):
-                    lista_errores.append('ERROR: Encontrada etiqueta o estilo no permitido (%s) en la linea %s del archivo %s' % (match.group(0), i+1, f))
+                    lista_errores.append('ERROR 046: ' + listaerrores[46] % (match.group(0), i+1, f))
          
 if len(sys.argv) == 1:
     #interfaz gráfica para seleccionar archivo
