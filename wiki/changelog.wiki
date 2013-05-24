@@ -6,6 +6,7 @@
   * Reportar error si no se detecta correctamente el tamaño de cover.jpg por error en el formato del archivo
   * Reorganizados los mensajes de error y codificado cada uno con un número de error, para una futura exportación de los resultados a un fichero CSV
   * Añadido portugués a la lista de idiomas
+  * Corregida Issue 13, detección correcta de File-as para libros con varios autores
 
 
 ==v1.05(20/05/2013)==
