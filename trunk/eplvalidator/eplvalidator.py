@@ -60,7 +60,7 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 25 : "El formato del nombre de archivo no es correcto",
                 26 : "El título que aparece en los metadatos es el del epub base",
                 27 : "El autor que aparece en los metadatos es el del epub base",
-                28 : "El idioma no es uno de los aceptados actualmente en la web",
+                28 : "El idioma (%s) no es uno de los aceptados actualmente en la web",
                 29 : "Editorial incorrecta. Debe ser ePubLibre (respetando las mayúsculas)",
                 30 : "Los siguientes metadatos faltan o están erróneos: %s",
                 31 : "No se ha detectado correctamente el año de publicación en la página info. Es posible que haya algún error en el formato",
@@ -118,8 +118,8 @@ excl_generos_y_subgeneros_no_ficcion = [e for e in generos_y_subgeneros_no_ficci
 subgeneros = list(set(subgeneros_ficcion + subgeneros_no_ficcion)) #subgéneros sin repetición
 
 #idiomas aceptados hasta la fecha
-#Alemán, Catalán, Español, Euskera, Francés, Gallego, Inglés, Italiano, Mandarín, Sueco 
-idiomas = ['de', 'ca', 'es', 'eu', 'fr', 'gl', 'en', 'it', 'zh', 'sv' ]
+#Alemán, Catalán, Español, Euskera, Francés, Gallego, Inglés, Italiano, Mandarín, Sueco, Portugues 
+idiomas = ['de', 'ca', 'es', 'eu', 'fr', 'gl', 'en', 'it', 'zh', 'sv', 'pt' ]
 
 #Otras:
 caracteres_permitidos = string.ascii_letters + string.digits + ' _-[]().,&:' #Lista de caracteres permitidos en nombres de archivo
@@ -175,8 +175,17 @@ def file_as_to_author(autor):
         if autor.count(',') < 1:
             lista_errores.append('ERROR 001: ' + listaerrores[1] % autor)
             return None
-        author_sort = autor.split(', ')
-        return author_sort[1] + ' ' + author_sort[0]
+        
+        authors = autor.split(' & ')
+        autor_invertido = ''
+        for a in authors:
+            if autor_invertido != '':
+                autor_invertido = autor_invertido + ' & '
+            a_sort = a.split(', ')
+            a_invertido = a_sort[1] + ' ' + a_sort[0]
+            autor_invertido = autor_invertido + a_invertido 
+             
+        return autor_invertido
     else:
         return None
 
@@ -360,7 +369,7 @@ def comprobar_metadatos_obligatorios():
         
         elif node.nodeName == 'dc:language':
             if node.firstChild.nodeValue not in idiomas:
-                lista_errores.append('ERROR 028: ' + listaerrores[28])
+                lista_errores.append('ERROR 028: ' + listaerrores[28] % node.firstChild.nodeValue)
             else:
                 metadatos_obligatorios.remove('idioma')
         
@@ -381,10 +390,10 @@ def comprobar_metadatos_obligatorios():
         
     if metadatos_obligatorios != list():
         #esto es una guarrada, pero me estaba dando problemas al imprimir la lista, ya que contiene cadenas en unicode
-        metadatos_erróneos = ''
+        metadatos_erroneos = ''
         for x in metadatos_obligatorios:
-            metadatos_erróneos = metadatos_erróneos + x + ', '
-        lista_errores.append('ERROR 030: ' + listaerrores[30] % metadatos_erróneos[:-2])
+            metadatos_erroneos = metadatos_erroneos + x + ', '
+        lista_errores.append('ERROR 030: ' + listaerrores[30] % metadatos_erroneos[:-2])
 
 def get_anyo_publicacion_from_info_page():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -567,7 +576,7 @@ def get_title_from_title_page():
             if n.getAttribute('id') == title_id:
                 title_file = n.getAttribute('href')    
     with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
-        pattern = '<h1 class="ttitulo"( id="heading_id_[0-9]")?><strong class="sans">([\w\s\.\-&;:,«»\?¿\(\)]+)</strong></h1>'
+        pattern = '<h1 class="ttitulo"( id="heading_id_[0-9]")?><strong class="sans">([\w\s\.\-&;:,«»\?¿¡!\(\)]+)</strong></h1>'
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
