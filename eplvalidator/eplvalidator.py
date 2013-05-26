@@ -29,7 +29,7 @@ except ImportError as exc:
     pass #podemos seguir ejecutándolo sin tkinter
 
 #Constantes globales
-version = 1.06
+version = 1.07
 version_plantilla = 'v1.0a'
 
 #errores
@@ -224,7 +224,7 @@ def comprobar_generos_y_subgeneros():
                     lista_errores.append('ERROR 008: ' + listaerrores[8])
             #comprueba si hay mezclados géneros de ficción y no ficción
             if set(etiquetas).intersection(excl_generos_y_subgeneros_ficcion) and set(etiquetas).intersection(excl_generos_y_subgeneros_no_ficcion):
-                lista_errores.append()
+                lista_errores.append('ERROR 009: ' + listaerrores[9])
             #Comprueba si hay alguna etiqueta que no aparece en ninguna de las listas    
             for etiq in etiquetas:
                 if etiq not in (tipo + generos + subgeneros):
@@ -576,11 +576,11 @@ def get_title_from_title_page():
             if n.getAttribute('id') == title_id:
                 title_file = n.getAttribute('href')    
     with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
-        pattern = '<h1 class="ttitulo"( id="heading_id_[0-9]")?><strong class="sans">([\w\s\.\-&;:,«»\?¿¡!\(\)]+)</strong></h1>'
+        pattern = '<h1 class="ttitulo"( id="[^>]+")?( title="[^>]+")?><strong class="sans">([\w\s\.\-&;:,«»\?¿¡!\(\)]+)</strong></h1>'
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
-                return m.group(2) 
+                return m.group(3) 
     lista_errores.append('ERROR 044: ' + listaerrores[44])
 
 def get_title_from_metadata():
