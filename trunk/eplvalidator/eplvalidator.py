@@ -335,13 +335,13 @@ def comprobar_formato_nombre_archivo():
     
     patterns = list()
     #[saga larga] Apellido, Nombre - Titulo (rx.x texto_opcional).epub
-    patterns.append("\[[\w\s\-\.]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub")
+    patterns.append("\[[\w\s\-\.,]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub")
     #Apellido, Nombre - [saga número] Titulo (rx.x texto_opcional).epub
-    patterns.append("([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - \[[\w\s\-\.]+\] [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub")
+    patterns.append("([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - \[[\w\s\-\.,]+\] [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub")
     #Apellido, Nombre - Titulo (rx.x texto_opcional).epub
     patterns.append("([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub")
     #[saga larga] [subsaga número] Apellido, Nombre - Titulo (rx.x texto_opcional).epub
-    patterns.append("\[[\w\s\-\.]+\] [[\w\s\-\.]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub")
+    patterns.append("\[[\w\s\-\.,]+\] [[\w\s\-\.,]+\] ([\w\s\-\.]+, [\w\s\-\.]+)( & [\w\s\-\.]+, [\w\s\-\.]+)* - [\w\s\-\.,:]+ \(r\d\.\d\s?[\w\s\-\.]*\)\.epub")
 
     for p in patterns:
         m = re.search(p,epub)
@@ -411,16 +411,20 @@ def get_anyo_publicacion_from_info_page():
                 return int(m.group(1))
     lista_errores.append('ERROR 031: ' + listaerrores[31])
 
-def comprobar_anyo_publicacion():
+def get_anyo_metadatos():
     elem = xmldoc_opf.getElementsByTagName('metadata') #obtiene metadatos
     for node in elem[0].childNodes:
         if (node.nodeName == 'dc:date') and (node.getAttribute('opf:event') == 'publication'):            
-            anyo_info = get_anyo_publicacion_from_info_page()
-            anyo_metadatos =  int(datetime.strptime(node.firstChild.nodeValue, '%Y-%m-%d').year)
-            if  anyo_metadatos != anyo_info:
-                lista_errores.append('ERROR 032: ' + listaerrores[32] % (anyo_metadatos, anyo_info))
-            if date.today().year < anyo_metadatos:
-                lista_errores.append('ERROR 033: ' + listaerrores[33] % (anyo_metadatos))
+            anyo = node.firstChild.nodeValue.split('-')[0]
+            return int(datetime.strptime(anyo, '%Y').year)
+
+def comprobar_anyo_publicacion():
+    anyo_info = get_anyo_publicacion_from_info_page()
+    anyo_metadatos = get_anyo_metadatos() 
+    if  anyo_metadatos != anyo_info:
+        lista_errores.append('ERROR 032: ' + listaerrores[32] % (anyo_metadatos, anyo_info))
+    if date.today().year < anyo_metadatos:
+        lista_errores.append('ERROR 033: ' + listaerrores[33] % (anyo_metadatos))
 
 def has_saga_in_filename():
     pattern = "\[[\w\s]+\]"
