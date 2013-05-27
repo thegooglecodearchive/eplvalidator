@@ -525,8 +525,10 @@ def get_author_from_info_page():
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
-                return m.group(1)
-
+                titulo = m.group(1)
+                titulo = titulo.replace('&amp;','&')
+                return titulo
+            
 def get_author_from_metadata():
     elem = xmldoc_opf.getElementsByTagName('dc:creator') #obtiene metadatos
     for node in elem:
@@ -556,7 +558,11 @@ def get_author_from_title():
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
-                return m.group(1)
+                
+                titulo = m.group(1)
+                #sustituimos caracteres especiales
+                titulo = titulo.replace('&amp;','&')
+                return titulo
     
                 
 def comprobar_autor():
@@ -584,7 +590,9 @@ def get_title_from_title_page():
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
-                return m.group(3) 
+                titulo = m.group(3)
+                titulo.replace('&amp;','&')
+                return titulo
     lista_errores.append('ERROR 044: ' + listaerrores[44])
 
 def get_title_from_metadata():
