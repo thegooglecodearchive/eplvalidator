@@ -78,7 +78,8 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 43 : "El nombre del autor en la página de info (%s) difiere de los metadatos (%s)",
                 44 : "No se ha detectado correctamente el título en la página de título. Es posible que haya algún error en el formato",
                 45 : "Título en los metadatos (%s) difiere del título en la página de título (%s)",
-                46 : 'Encontrada etiqueta o estilo no permitido (%s) en la linea %s del archivo %s'}
+                46 : 'Encontrada etiqueta o estilo no permitido (%s) en la linea %s del archivo %s',
+                47 : 'El identificador único del ePub debe ser del tipo UUID'}
 
 uuid_epubbase = 'urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617'
 uuid_epubbase_2 = 'urn:uuid:00000000-0000-0000-0000-000000000000'
@@ -119,7 +120,7 @@ subgeneros = list(set(subgeneros_ficcion + subgeneros_no_ficcion)) #subgéneros 
 
 #idiomas aceptados hasta la fecha
 #Alemán, Catalán, Español, Euskera, Francés, Gallego, Inglés, Italiano, Mandarín, Sueco, Portugues 
-idiomas = ['de', 'ca', 'es', 'eu', 'fr', 'gl', 'en', 'it', 'zh', 'sv', 'pt' ]
+idiomas = ['de', 'ca', 'es', 'eo', 'eu', 'fr', 'gl', 'en', 'it', 'zh', 'sv', 'pt' ]
 
 #Otras:
 caracteres_permitidos = string.ascii_letters + string.digits + ' _-[]().,&:' #Lista de caracteres permitidos en nombres de archivo
@@ -257,7 +258,9 @@ def comprobar_nombre_archivos_internos():
 def comprobar_bookid():
     """comprueba que el book-id es diferente del epub-base y que es el mismo en content.opf y toc.ncx"""
     node = xmldoc_opf.getElementsByTagName('dc:identifier')
-    if (node[0].firstChild.nodeValue == uuid_epubbase) or (node[0].firstChild.nodeValue == uuid_epubbase_2):
+    if (node[0].getAttribute('opf:scheme') != 'UUID'):
+        lista_errores.append('ERROR 047: ' + listaerrores[47])
+    elif (node[0].firstChild.nodeValue == uuid_epubbase) or (node[0].firstChild.nodeValue == uuid_epubbase_2):
         lista_errores.append('ERROR 015: ' + listaerrores[15])
     elif node[0].firstChild.nodeValue == "":
         lista_errores.append('ERROR 016: ' + listaerrores[16])
