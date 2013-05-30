@@ -3,6 +3,8 @@
 ==v1.07(TBA)==
   * Añadido Error 047 : 'El identificador único del ePub debe ser del tipo UUID'
   * Sustituir & amp ;  por & al detectar autor en página info y título
+  * Comprobación de que el editor en la página de título coincide con el de la página info
+  * Mejoras en el código para reducir el número de lecturas de los metadatos en el archivo opf
 
 ==v1.06(25/05/2013)==
   * Implementada Issue 4
