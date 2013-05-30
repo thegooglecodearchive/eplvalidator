@@ -32,6 +32,10 @@ except ImportError as exc:
 version = 1.07
 version_plantilla = 'v1.0a'
 
+#archivos principales
+title_file = ""
+info_file = ""
+
 #errores
 listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 2 : "Falta marcar cover.jpg como imagen de portada",
@@ -79,7 +83,10 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 44 : "No se ha detectado correctamente el título en la página de título. Es posible que haya algún error en el formato",
                 45 : "Título en los metadatos (%s) difiere del título en la página de título (%s)",
                 46 : 'Encontrada etiqueta o estilo no permitido (%s) en la linea %s del archivo %s',
-                47 : 'El identificador único del ePub debe ser del tipo UUID'}
+                47 : 'El identificador único del ePub debe ser del tipo UUID',
+                48 : 'No se ha encontrado el nick del editor en la página de título',
+                49 : 'No se ha encontrado el nick del editor en la página de info',
+                50 : 'El editor en la página de título (%s) no coincide con el de la página info (%s)'}
 
 uuid_epubbase = 'urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617'
 uuid_epubbase_2 = 'urn:uuid:00000000-0000-0000-0000-000000000000'
@@ -190,7 +197,68 @@ def file_as_to_author(autor):
     else:
         return None
 
+#obtención de datos básicos
+def get_info_file_name():
+    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
+    title_id = elem[3].getAttribute('idref')
+    elem = xmldoc_opf.getElementsByTagName('manifest')
+    for n in elem[0].childNodes:
+        if n.nodeName == 'item':
+            if n.getAttribute('id') == title_id:
+                return(n.getAttribute('href'))    
+
+def get_title_file_name():
+    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
+    title_id = elem[2].getAttribute('idref')
+    elem = xmldoc_opf.getElementsByTagName('manifest')
+    for n in elem[0].childNodes:
+        if n.nodeName == 'item':
+            if n.getAttribute('id') == title_id:
+                return(n.getAttribute('href'))    
+
+def get_version_from_filename(epub):
+    pattern = "\(r([0-9]\.[0-9])[^\)]*\).epub"
+    m = re.search(pattern,epub)
+    if m is None:
+        lista_errores.append('ERROR 018: ' + listaerrores[18])
+    else:
+        return m.group(1)
+    
+def get_editor_from_title_page():
+    global title_file
+    if title_file == "":
+        title_file = get_title_file_name()
+        
+    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+        pattern = '<p class="tfirma"><strong class="sans">([^<]+)</strong>'
+        for line in f:
+            m = re.search(pattern, line)
+            if not m is None:
+                titulo = m.group(1)
+                return titulo
+    lista_errores.append('ERROR 048: ' + listaerrores[48])
+    
+def get_editor_from_info_page():
+    global info_file
+    if info_file == "":
+        info_file = get_info_file_name()
+    with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
+        pattern = '<p class="salto10">Editor digital: ([^<]+)</p>'
+        for line in f:
+            m = re.search(pattern, line)
+            if not m is None:
+                titulo = m.group(1)
+                return titulo
+    lista_errores.append('ERROR 049: ' + listaerrores[49])
+ 
+        
 #Funciones para comprobaciones en los epubs
+def comprobar_editor_en_titulo_e_info():
+    editor_titulo = get_editor_from_title_page()
+    editor_info =get_editor_from_info_page()
+    if (editor_titulo and editor_info and (editor_titulo != editor_info)):
+        lista_errores.append('ERROR 050: ' + listaerrores[50] %(editor_titulo, editor_info))
+    
 def comprobar_portada_semantics():
     elem = xmldoc_opf.getElementsByTagName('metadata') #obtiene metadatos
     for node in elem[0].childNodes:
@@ -271,22 +339,12 @@ def comprobar_bookid():
                 if n.getAttribute('content') != node[0].firstChild.nodeValue:
                     lista_errores.append('ERROR 017: ' + listaerrores[17])
         
-def get_version_from_filename(epub):
-    pattern = "\(r([0-9]\.[0-9])[^\)]*\).epub"
-    m = re.search(pattern,epub)
-    if m is None:
-        lista_errores.append('ERROR 018: ' + listaerrores[18])
-    else:
-        return m.group(1) 
-    
+ 
 def get_version_from_title_page(epub):
-    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
-    title_id = elem[2].getAttribute('idref')
-    elem = xmldoc_opf.getElementsByTagName('manifest')
-    for n in elem[0].childNodes:
-        if n.nodeName == 'item':
-            if n.getAttribute('id') == title_id:
-                title_file = n.getAttribute('href')    
+    global title_file
+    if title_file == "":
+        title_file = get_title_file_name()
+    
     with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
         pattern = '<p class="trevision"><strong class="sans">eP(UB|ub) r([0-9].[0-9])</strong></p>'
         for line in f:
@@ -296,13 +354,9 @@ def get_version_from_title_page(epub):
     lista_errores.append('ERROR 019: ' + listaerrores[19])
 
 def get_modification_date_from_title_page():
-    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
-    title_id = elem[2].getAttribute('idref')
-    elem = xmldoc_opf.getElementsByTagName('manifest')
-    for n in elem[0].childNodes:
-        if n.nodeName == 'item':
-            if n.getAttribute('id') == title_id:
-                title_file = n.getAttribute('href')    
+    global title_file
+    if title_file == "":
+        title_file = get_title_file_name()
     with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
         pattern = '<p class="tfirma"><strong class="sans">[^<]+</strong> <code class="tfecha sans">(\d{2}\.\d{2}\.\d{2})</code></p>'
         for line in f:
@@ -399,14 +453,10 @@ def comprobar_metadatos_obligatorios():
         lista_errores.append('ERROR 030: ' + listaerrores[30] % metadatos_erroneos[:-2])
 
 def get_anyo_publicacion_from_info_page():
-    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
-    title_id = elem[3].getAttribute('idref')
-    elem = xmldoc_opf.getElementsByTagName('manifest')
-    for n in elem[0].childNodes:
-        if n.nodeName == 'item':
-            if n.getAttribute('id') == title_id:
-                title_file = n.getAttribute('href')    
-    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+    global info_file
+    if info_file == "":
+        info_file = get_info_file_name()
+    with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
         pattern = '<p>[\w\s\.\-&;\']+, ([0-9]{4})((-|/)(0[1-9]|1[0-2])((-|/)(0[1-9]|[1-2][0-9]|3[0-1]))?)?</p>'
         for line in f:
             m = re.search(pattern, line)
@@ -446,14 +496,10 @@ def comprobar_saga_en_metadatos():
             lista_errores.append('ERROR 034: ' + listaerrores[34])
 
 def get_translator_from_info_page():
-    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
-    title_id = elem[3].getAttribute('idref')
-    elem = xmldoc_opf.getElementsByTagName('manifest')
-    for n in elem[0].childNodes:
-        if n.nodeName == 'item':
-            if n.getAttribute('id') == title_id:
-                title_file = n.getAttribute('href')    
-    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+    global info_file
+    if info_file == "":
+        info_file = get_info_file_name()
+    with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
         pattern = '<p>Traducción: ([\w\s\.\-&;]+)( \([0-9]{4}\))?</p>'
         for line in f:
             m = re.search(pattern, line)
@@ -516,14 +562,10 @@ def comprobar_size_portada():
         lista_errores.append('ERROR 040: ' + listaerrores[40] % str(cover_size))
 
 def get_author_from_info_page():
-    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
-    title_id = elem[3].getAttribute('idref')
-    elem = xmldoc_opf.getElementsByTagName('manifest')
-    for n in elem[0].childNodes:
-        if n.nodeName == 'item':
-            if n.getAttribute('id') == title_id:
-                title_file = n.getAttribute('href')    
-    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+    global info_file
+    if info_file == "":
+        info_file = get_info_file_name()
+    with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
         pattern = "<p>([\w\s\.\-&;']+), ([0-9]{4})"
         for line in f:
             m = re.search(pattern, line)
@@ -549,13 +591,10 @@ def get_author_sort_from_metadata():
             return node.getAttribute('opf:file-as')
 
 def get_author_from_title():
-    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
-    title_id = elem[2].getAttribute('idref')
-    elem = xmldoc_opf.getElementsByTagName('manifest')
-    for n in elem[0].childNodes:
-        if n.nodeName == 'item':
-            if n.getAttribute('id') == title_id:
-                title_file = n.getAttribute('href')    
+    global title_file
+    if title_file == "":
+        title_file = get_title_file_name()
+
     with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
         pattern = '<p class="tautor"><code class="sans">([\w\s\.\-&;\']+)</code></p>'
         for line in f:
@@ -581,13 +620,10 @@ def comprobar_autor():
         lista_errores.append('ERROR 043: ' + listaerrores[43] % (author_info, author_metadata))
 
 def get_title_from_title_page():
-    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
-    title_id = elem[2].getAttribute('idref')
-    elem = xmldoc_opf.getElementsByTagName('manifest')
-    for n in elem[0].childNodes:
-        if n.nodeName == 'item':
-            if n.getAttribute('id') == title_id:
-                title_file = n.getAttribute('href')    
+    global title_file
+    if title_file == "":
+        title_file = get_title_file_name()
+        
     with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
         pattern = '<h1 class="ttitulo"( id="[^>]+")?( title="[^>]+")?><strong class="sans">([\w\s\.\-&;:,«»\?¿¡!\(\)]+)</strong></h1>'
         for line in f:
@@ -695,6 +731,7 @@ for epub in files:
         comprobar_autor()
         comprobar_titulo()
         comprobar_fecha_modificacion()
+        comprobar_editor_en_titulo_e_info()
 
         #imprimir los errores
         print('EPLValidator v%s' %version)
