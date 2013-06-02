@@ -29,7 +29,7 @@ except ImportError as exc:
     pass #podemos seguir ejecutándolo sin tkinter
 
 #Constantes globales
-version = 1.07
+version = 1.08
 version_plantilla = 'v1.0a'
 
 #archivos principales
@@ -140,7 +140,6 @@ lSpine = list()
 lista_errores = list()
 
 #Funciones auxiliares
-#--------------------
 def locate(pattern, root=os.curdir):
     """Localiza todos los archivos que coinciden con cierto patrón
     
@@ -250,8 +249,7 @@ def get_editor_from_info_page():
                 titulo = m.group(1)
                 return titulo
     lista_errores.append('ERROR 049: ' + listaerrores[49])
- 
-        
+   
 #Funciones para comprobaciones en los epubs
 def comprobar_editor_en_titulo_e_info():
     editor_titulo = get_editor_from_title_page()
@@ -473,11 +471,12 @@ def get_anyo_metadatos():
 
 def comprobar_anyo_publicacion():
     anyo_info = get_anyo_publicacion_from_info_page()
-    anyo_metadatos = get_anyo_metadatos() 
-    if  anyo_metadatos != anyo_info:
-        lista_errores.append('ERROR 032: ' + listaerrores[32] % (anyo_metadatos, anyo_info))
-    if date.today().year < anyo_metadatos:
-        lista_errores.append('ERROR 033: ' + listaerrores[33] % (anyo_metadatos))
+    anyo_metadatos = get_anyo_metadatos()
+    if anyo_info and anyo_metadatos: 
+        if  anyo_metadatos != anyo_info:
+            lista_errores.append('ERROR 032: ' + listaerrores[32] % (anyo_metadatos, anyo_info))
+        if date.today().year < anyo_metadatos:
+            lista_errores.append('ERROR 033: ' + listaerrores[33] % (anyo_metadatos))
 
 def has_saga_in_filename():
     pattern = "\[[\w\s]+\]"
@@ -707,9 +706,9 @@ for epub in files:
             if n.nodeName == 'item':
                 node_type = n.getAttribute('media-type')
                 if node_type == 'application/xhtml+xml':
-                    lChapters.append(os.path.join(dir, n.getAttribute('href')))
+                    lChapters.append(os.path.join(dir, n.getAttribute('href')).replace('%20',' '))
                 elif 'image' in node_type:
-                    lImages.append(os.path.join(dir, n.getAttribute('href')))
+                    lImages.append(os.path.join(dir, n.getAttribute('href')).replace('%20',' '))
         elem = xmldoc.getElementsByTagName('spine') #get spine        
 
         #-----Aquí irán las comprobaciones una a una
@@ -742,10 +741,11 @@ for epub in files:
         else:
             epubs_correctos +=1
             print("todo está OK!")
-
         lista_errores = list()
         lChapters = list()
         lImages = list()
+        title_file = ""
+        info_file = ""
         print("")
         shutil.rmtree(tempdir)
 
