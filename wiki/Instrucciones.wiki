@@ -28,11 +28,13 @@ El script tiene dos modos de empleo
 
 ==Modo 1. Validar un único archivo==
 
-Ejecutamos el script bien haciendo doble click sobre él, o bien desde la linea de comandos sin ningún argumento adicional “python3 eplvalidator.py”
+Ejecutamos el script bien haciendo doble click sobre él (sólo Windows), o bien desde la linea de comandos sin ningún argumento adicional "python3 eplvalidator.py"
 
 Nos mostrará una pantalla de selección de archivos. Buscamos el epub que deseamos validar y pulsamos aceptar.
 
 Se ejecutará el script y nos mostrará los errores detectados en una nueva pantalla.
+
+_Nota: Si nos da algún error relacionado con la librería Tkinter, es muy probable que estemos intentando ejecutar con una versión 2.x de Python. Por favor vuelve al primer paso y verifica que tienes instalado Python 3.x_
 
 ==Modo 2. Validar todos los archivos dentro de un directorio==
 
@@ -40,6 +42,7 @@ Ejecutamos el script desde la línea de comandos, poniendo como argumento la rut
 
 El script ejecutará la validación sobre todos los epubs que encuentre en dicho directorio y nos mostrará una pantalla con los resultados.
 
+_¡CUIDADO!: Si la ruta o el nombre del archivo contienen espacios, deberás colocarlo entre comillas dobles, por ejemplo "c:\Mi directorio\Libro a validar.epub"_
 
 =FALSOS POSITIVOS=
 
