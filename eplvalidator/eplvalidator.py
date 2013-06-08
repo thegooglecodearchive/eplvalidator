@@ -86,7 +86,8 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 47 : 'El identificador único del ePub debe ser del tipo UUID',
                 48 : 'No se ha encontrado el nick del editor en la página de título',
                 49 : 'No se ha encontrado el nick del editor en la página de info',
-                50 : 'El editor en la página de título (%s) no coincide con el de la página info (%s)'}
+                50 : 'El editor en la página de título (%s) no coincide con el de la página info (%s)',
+                51 : 'El formato del UUID no es correcto (%)'}
 
 uuid_epubbase = 'urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617'
 uuid_epubbase_2 = 'urn:uuid:00000000-0000-0000-0000-000000000000'
@@ -189,8 +190,11 @@ def file_as_to_author(autor):
             if autor_invertido != '':
                 autor_invertido = autor_invertido + ' & '
             a_sort = a.split(', ')
-            a_invertido = a_sort[1] + ' ' + a_sort[0]
-            autor_invertido = autor_invertido + a_invertido 
+            if len(a_sort) > 1:
+                a_invertido = a_sort[1] + ' ' + a_sort[0]
+                autor_invertido = autor_invertido + a_invertido
+            else:
+                a_invertido = a_sort 
              
         return autor_invertido
     else:
@@ -324,13 +328,22 @@ def comprobar_nombre_archivos_internos():
 def comprobar_bookid():
     """comprueba que el book-id es diferente del epub-base y que es el mismo en content.opf y toc.ncx"""
     node = xmldoc_opf.getElementsByTagName('dc:identifier')
+    #comprueba si es del tipo UUID
     if (node[0].getAttribute('opf:scheme') != 'UUID'):
         lista_errores.append('ERROR 047: ' + listaerrores[47])
+    #comprueba si es igual al del epubbase
     elif (node[0].firstChild.nodeValue == uuid_epubbase) or (node[0].firstChild.nodeValue == uuid_epubbase_2):
         lista_errores.append('ERROR 015: ' + listaerrores[15])
+    #comrpueba si está relleno
     elif node[0].firstChild.nodeValue == "":
         lista_errores.append('ERROR 016: ' + listaerrores[16])
     else:
+        #Comprobar formato correcto del UUID
+        uuid4hex_pattern = 'urn:uuid:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
+        m = re.search(uuid4hex_pattern, node[0].firstChild.nodeValue)
+        if m is None:
+            lista_errores.append('ERROR 051: ' + listaerrores[51] % node[0].firstChild.nodeValue)
+        
         nodes_ncx = xmldoc_ncx.getElementsByTagName('meta')
         for n in nodes_ncx:
             if n.getAttribute('name') == 'dtb:uid':
