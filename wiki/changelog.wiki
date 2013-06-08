@@ -1,6 +1,10 @@
 #registro de cambios
 
-==v1.07(TBA)==
+==v1.08(TBA)==
+  * Añadida comprobación nueva: Issue 16
+  * Corregido fallo cuando no se encontraba el metadato "fecha de publicación"
+
+==v1.07(30/05/2013)==
   * Añadido Error 047 : 'El identificador único del ePub debe ser del tipo UUID'
   * Sustituir & amp ;  por & al detectar autor en página info y título
   * Comprobación de que el editor en la página de título coincide con el de la página info
