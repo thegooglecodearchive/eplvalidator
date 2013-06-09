@@ -1,6 +1,6 @@
 #registro de cambios
 
-==v1.08(TBA)==
+==v1.08(09/06/2013)==
   * Añadida comprobación nueva: Issue 16
   * Añadida comprobación nueva: Issue 17
   * Añadida comprobación nueva: Issue 19
