@@ -87,7 +87,7 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 48 : 'No se ha encontrado el nick del editor en la página de título',
                 49 : 'No se ha encontrado el nick del editor en la página de info',
                 50 : 'El editor en la página de título (%s) no coincide con el de la página info (%s)',
-                51 : 'El formato del UUID no es correcto (%)',
+                51 : 'El formato del UUID no es correcto (%s)',
                 52 : 'Se ha encontrado más de un archivo .css en el epub',
                 53 : 'Metadato %s duplicado',
                 54 : 'No se encuentra el archivo cover.jpg'}
@@ -521,7 +521,7 @@ def get_translator_from_info_page():
     if info_file == "":
         info_file = get_info_file_name()
     with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
-        pattern = '<p>Traducción: ([\w\s\.\-&;]+)( \([0-9]{4}\))?</p>'
+        pattern = '<p>Traducción: ([\w\s\.\-&;]+),?( \(?[0-9]{4}\)?)?</p>'
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
@@ -794,4 +794,4 @@ for epub in files:
 print("Total epubs correctos: " + str(epubs_correctos))
 print("Total epubs con errores: " + str(epubs_erroneos))
         
-input("Presiona intro para finalizar el programa...")
+input("Presiona INTRO para finalizar el programa...")
