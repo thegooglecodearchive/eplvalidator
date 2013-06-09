@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 '''
 EPLValidator
 Created on May 16, 2013
@@ -29,7 +29,7 @@ except ImportError as exc:
     pass #podemos seguir ejecutándolo sin tkinter
 
 #Constantes globales
-version = 1.08
+version = 1.09
 version_plantilla = 'v1.0a'
 
 #archivos principales
@@ -87,7 +87,10 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 48 : 'No se ha encontrado el nick del editor en la página de título',
                 49 : 'No se ha encontrado el nick del editor en la página de info',
                 50 : 'El editor en la página de título (%s) no coincide con el de la página info (%s)',
-                51 : 'El formato del UUID no es correcto (%)'}
+                51 : 'El formato del UUID no es correcto (%)',
+                52 : 'Se ha encontrado más de un archivo .css en el epub',
+                53 : 'Metadato %s duplicado',
+                54 : 'No se encuentra el archivo cover.jpg'}
 
 uuid_epubbase = 'urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617'
 uuid_epubbase_2 = 'urn:uuid:00000000-0000-0000-0000-000000000000'
@@ -396,7 +399,7 @@ def comprobar_fecha_modificacion():
 def comprobar_version_coincidente(epub):
     v_nombre_archivo = get_version_from_filename(epub)
     v_pagina_titulo = get_version_from_title_page(epub)
-    if  v_nombre_archivo != v_pagina_titulo:
+    if  v_nombre_archivo and v_pagina_titulo and (v_nombre_archivo != v_pagina_titulo):
         lista_errores.append('ERROR 024: ' + listaerrores[24] % (v_nombre_archivo, v_pagina_titulo))
 
 def comprobar_formato_nombre_archivo():
@@ -426,7 +429,8 @@ def comprobar_metadatos_obligatorios():
             if node.firstChild.nodeValue == 'Título': #hemos olvidado sustituir el título por defecto del epub base
                 lista_errores.append('ERROR 026: ' + listaerrores[26])
             else:
-                metadatos_obligatorios.remove('título')
+                if 'título' in metadatos_obligatorios:
+                    metadatos_obligatorios.remove('título')
         
         elif (node.nodeName == 'dc:creator') and (node.getAttribute('opf:role') == 'aut'):
             if node.firstChild.nodeValue == 'Autor': #hemos olvidado sustituir el autor por defecto del epub base
@@ -439,22 +443,27 @@ def comprobar_metadatos_obligatorios():
             if node.firstChild.nodeValue not in idiomas:
                 lista_errores.append('ERROR 028: ' + listaerrores[28] % node.firstChild.nodeValue)
             else:
-                metadatos_obligatorios.remove('idioma')
+                if 'idioma' in metadatos_obligatorios:
+                    metadatos_obligatorios.remove('idioma')
         
         elif node.nodeName == 'dc:publisher':
             if node.firstChild.nodeValue != 'ePubLibre':
                 lista_errores.append('ERROR 029: ' + listaerrores[29])
             else:
-                metadatos_obligatorios.remove('editorial')
+                if 'editorial' in metadatos_obligatorios:
+                    metadatos_obligatorios.remove('editorial')
                 
         elif (node.nodeName == 'dc:date') and (node.getAttribute('opf:event') == 'modification'):
-            metadatos_obligatorios.remove('modificación')
+            if 'modificación' in metadatos_obligatorios:
+                metadatos_obligatorios.remove('modificación')
                 
         elif (node.nodeName == 'dc:date') and (node.getAttribute('opf:event') == 'publication'):
-            metadatos_obligatorios.remove('publicación')
+            if 'publicación' in metadatos_obligatorios:
+                metadatos_obligatorios.remove('publicación')
                 
         elif node.nodeName == 'dc:description':
-            metadatos_obligatorios.remove('descripción')
+            if 'descripción' in metadatos_obligatorios:
+                metadatos_obligatorios.remove('descripción')
         
     if metadatos_obligatorios != list():
         #esto es una guarrada, pero me estaba dando problemas al imprimir la lista, ya que contiene cadenas en unicode
@@ -568,10 +577,14 @@ def get_jpg_size(jpeg):
 
 def comprobar_size_portada():
     ruta = tempdir + '/OEBPS/Images/cover.jpg'
-    with open(ruta, 'rb') as f:
-        cover_size = get_jpg_size(f)
-    if  cover_size != (600, 900):
-        lista_errores.append('ERROR 040: ' + listaerrores[40] % str(cover_size))
+    try :
+        with open(ruta, 'rb') as f:
+            cover_size = get_jpg_size(f)
+            if  cover_size != (600, 900):
+                lista_errores.append('ERROR 040: ' + listaerrores[40] % str(cover_size))
+    except IOError:
+        lista_errores.append('ERROR 054: ' + listaerrores[54]) #no se encuentra cover.jpg
+        
 
 def get_author_from_info_page():
     global info_file
@@ -666,7 +679,19 @@ def comprobar_etiquetas_basura():
             for pattern in patterns:
                 for match in re.finditer(pattern, line):
                     lista_errores.append('ERROR 046: ' + listaerrores[46] % (match.group(0), i+1, f))
-         
+
+def comprobar_css():
+    files = locate("*.css",sdir)
+    if sum(1 for _ in files) > 1:
+        lista_errores.append('ERROR 052: ' + listaerrores[52])
+
+def comprobar_metadatos_repetidos():
+        metadatos_unicos = ['dc:title', 'dc:creator', 'dc:publisher', 'dc:description', 'dc:language', 'dc:subject']
+        for metadato in metadatos_unicos:
+            elem = xmldoc_opf.getElementsByTagName(metadato)
+            if len(elem) > 1:
+                lista_errores.append('ERROR 053: ' + listaerrores[53] % metadato)
+    
 if len(sys.argv) == 1:
     #interfaz gráfica para seleccionar archivo
     Tk().withdraw() # No necesitamos un GUI completo, así que no mostramos la ventana principal
@@ -683,6 +708,8 @@ elif len(sys.argv) == 2:
     elif os.path.isfile(sdir):
         files = [sdir]
         (sdir, sfile) = os.path.split(sdir)
+        if sdir == '':
+            sdir = os.curdir;
         tempdir = sdir + '/temp/' #directorio temporal para descomprimir el epub 
     else:
         print("Argumentos incorrectos. ABORTADO")
@@ -736,6 +763,7 @@ for epub in files:
         comprobar_version_coincidente(epub)     
         comprobar_formato_nombre_archivo()  
         comprobar_metadatos_obligatorios()
+        comprobar_metadatos_repetidos()
         comprobar_anyo_publicacion()
         comprobar_saga_en_metadatos()
         comprobar_traductor()
@@ -744,6 +772,7 @@ for epub in files:
         comprobar_titulo()
         comprobar_fecha_modificacion()
         comprobar_editor_en_titulo_e_info()
+        comprobar_css()
 
         #imprimir los errores
         print('EPLValidator v%s' %version)
@@ -765,4 +794,4 @@ for epub in files:
 print("Total epubs correctos: " + str(epubs_correctos))
 print("Total epubs con errores: " + str(epubs_erroneos))
         
-input("Presiona cualquier tecla para finalizar el programa...")
+input("Presiona intro para finalizar el programa...")
