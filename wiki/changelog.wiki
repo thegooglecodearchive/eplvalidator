@@ -1,6 +1,8 @@
 #registro de cambios
 
 ==v1.09(TBA)==
+  * Corregidas Issue 21, Issue 22, Issue 23
+  * Añadidos caracteres '-', '.', ',' en el patron que detecta una saga en el nombre de archivo
 
 ==v1.08(09/06/2013)==
   * Añadida comprobación nueva: Issue 16
