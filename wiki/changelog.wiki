@@ -3,6 +3,8 @@
 ==v1.09(TBA)==
   * Corregidas Issue 21, Issue 22, Issue 23
   * Añadidos caracteres '-', '.', ',' en el patron que detecta una saga en el nombre de archivo
+  * Añadido apóstrofe a los caracteres permitidos en nombre de archivo y título
+  * Detección de nombre de editor digital (Digital editor) en la página info para libros en inglés
 
 ==v1.08(09/06/2013)==
   * Añadida comprobación nueva: Issue 16
