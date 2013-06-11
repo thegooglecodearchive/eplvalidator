@@ -5,6 +5,7 @@
   * Añadidos caracteres '-', '.', ',' en el patron que detecta una saga en el nombre de archivo
   * Añadido apóstrofe a los caracteres permitidos en nombre de archivo y título
   * Detección de nombre de editor digital (Digital editor) en la página info para libros en inglés
+  * Ampliada la detección de fecha de publicación en página info para fechas tipo "Nombre apellido, octubre de 2011"
 
 ==v1.08(09/06/2013)==
   * Añadida comprobación nueva: Issue 16
