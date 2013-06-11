@@ -94,6 +94,8 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
 
 uuid_epubbase = ['urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617', 'urn:uuid:00000000-0000-0000-0000-000000000000']
 
+meses = ['enero', 'febrero' , 'marzo', 'abril', 'mayo', 'junio' , 'julio', 'agosto', 'septiembre' , 'octubre', 'noviembre', 'diciembre']
+
 #Géneros y subgéneros:
 tipo = ['Ficción', 'No Ficción']
 
@@ -204,8 +206,8 @@ def file_as_to_author(autor):
 
 #obtención de datos básicos
 def get_info_file_name():
-    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
-    title_id = elem[3].getAttribute('idref')
+    #elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
+    title_id = 'info.xhtml'
     elem = xmldoc_opf.getElementsByTagName('manifest')
     for n in elem[0].childNodes:
         if n.nodeName == 'item':
@@ -248,7 +250,7 @@ def get_editor_from_info_page():
     if info_file == "":
         info_file = get_info_file_name()
     with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
-        pattern = '<p class="salto10">(Editor digital|Digital editor): ([^<]+)</p>'
+        pattern = '<p class="salto10">(Editor digital|Digital editor): ([^<]+)((, .*)?</p>'
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
@@ -476,11 +478,14 @@ def get_anyo_publicacion_from_info_page():
     if info_file == "":
         info_file = get_info_file_name()
     with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
-        pattern = '<p>[\w\s\.\-&;\']+, ([0-9]{4})((-|/)(0[1-9]|1[0-2])((-|/)(0[1-9]|[1-2][0-9]|3[0-1]))?)?</p>'
+        patterns= list()
+        patterns.append('<p>([\w\s\.\-&;\']+), ([0-9]{4})((-|/)(0[1-9]|1[0-2])((-|/)(0[1-9]|[1-2][0-9]|3[0-1]))?)?</p>')
+        patterns.append('<p>[\w\s\.\-&;\']+, (' + '|'.join(meses) + ') de ([0-9]{4})</p>')
         for line in f:
-            m = re.search(pattern, line)
-            if not m is None:
-                return int(m.group(1))
+            for pattern in patterns:
+                m = re.search(pattern, line)
+                if not m is None:
+                    return int(m.group(2))
     lista_errores.append('ERROR 031: ' + listaerrores[31])
 
 def get_anyo_metadatos():
@@ -590,13 +595,17 @@ def get_author_from_info_page():
     if info_file == "":
         info_file = get_info_file_name()
     with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
-        pattern = "<p>([\w\s\.\-&;']+), ([0-9]{4})"
+        patterns = list()
+        patterns.append('<p>([\w\s\.\-&;\']+), ([0-9]{4})((-|/)(0[1-9]|1[0-2])((-|/)(0[1-9]|[1-2][0-9]|3[0-1]))?)?</p>')
+        patterns.append('<p>([\w\s\.\-&;\']+), (' + '|'.join(meses) + ') de ([0-9]{4})</p>')
+
         for line in f:
-            m = re.search(pattern, line)
-            if not m is None:
-                titulo = m.group(1)
-                titulo = titulo.replace('&amp;','&')
-                return titulo
+            for pattern in patterns:
+                m = re.search(pattern, line)
+                if not m is None:
+                    titulo = m.group(1)
+                    titulo = titulo.replace('&amp;','&')
+                    return titulo
             
 def get_author_from_metadata():
     elem = xmldoc_opf.getElementsByTagName('dc:creator') #obtiene metadatos
