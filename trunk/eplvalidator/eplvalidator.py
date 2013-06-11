@@ -41,10 +41,10 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 2 : "Falta marcar cover.jpg como imagen de portada",
                 3 : "Falta género o género erróneo",
                 4 : "Falta subgénero o subgénero erróneo",
-                5 : "Subgéneros de no ficción utilizado en libro de ficción",
-                6 : "Géneros de no ficción utilizado en libro de ficción",
-                7 : "Subgéneros de ficción utilizado en libro de no ficción",
-                8 : "Géneros de ficción utilizado en libro de no ficción",
+                5 : "Subgéneros de No ficción utilizado en libro de Ficción",
+                6 : "Géneros de No ficción utilizado en libro de Ficción",
+                7 : "Subgéneros de Ficción utilizado en libro de No ficción",
+                8 : "Géneros de Ficción utilizado en libro de No ficción",
                 9 : "Uso simultáneo de géneros de Ficción y No ficción",
                 10 : "Género (%s) no está en la lista de géneros aceptados por la web",
                 11 : "El tamaño del archivo interno %s excede de 300 KB",
@@ -92,8 +92,7 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 53 : 'Metadato %s duplicado',
                 54 : 'No se encuentra el archivo cover.jpg'}
 
-uuid_epubbase = 'urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617'
-uuid_epubbase_2 = 'urn:uuid:00000000-0000-0000-0000-000000000000'
+uuid_epubbase = ['urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617', 'urn:uuid:00000000-0000-0000-0000-000000000000']
 
 #Géneros y subgéneros:
 tipo = ['Ficción', 'No Ficción']
@@ -134,7 +133,7 @@ subgeneros = list(set(subgeneros_ficcion + subgeneros_no_ficcion)) #subgéneros 
 idiomas = ['de', 'ca', 'es', 'eo', 'eu', 'fr', 'gl', 'en', 'it', 'zh', 'sv', 'pt' ]
 
 #Otras:
-caracteres_permitidos = string.ascii_letters + string.digits + ' _-[]().,&:' #Lista de caracteres permitidos en nombres de archivo
+caracteres_permitidos = string.ascii_letters + string.digits + " _-[]().,&:'" #Lista de caracteres permitidos en nombres de archivo
 
 #Variables globales
 lChapters = list() #lista con todos los capítulos del epub
@@ -249,11 +248,11 @@ def get_editor_from_info_page():
     if info_file == "":
         info_file = get_info_file_name()
     with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
-        pattern = '<p class="salto10">Editor digital: ([^<]+)</p>'
+        pattern = '<p class="salto10">(Editor digital|Digital editor): ([^<]+)</p>'
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
-                titulo = m.group(1)
+                titulo = m.group(2)
                 return titulo
     lista_errores.append('ERROR 049: ' + listaerrores[49])
    
@@ -335,7 +334,7 @@ def comprobar_bookid():
     if (node[0].getAttribute('opf:scheme') != 'UUID'):
         lista_errores.append('ERROR 047: ' + listaerrores[47])
     #comprueba si es igual al del epubbase
-    elif (node[0].firstChild.nodeValue == uuid_epubbase) or (node[0].firstChild.nodeValue == uuid_epubbase_2):
+    elif (node[0].firstChild.nodeValue in uuid_epubbase):
         lista_errores.append('ERROR 015: ' + listaerrores[15])
     #comrpueba si está relleno
     elif node[0].firstChild.nodeValue == "":
@@ -501,7 +500,7 @@ def comprobar_anyo_publicacion():
             lista_errores.append('ERROR 033: ' + listaerrores[33] % (anyo_metadatos))
 
 def has_saga_in_filename():
-    pattern = "\[[\w\s]+\]"
+    pattern = "\[[\w\s\-,\.]+\]"
     m = re.search(pattern, epub)
     if m is None:
         return False
@@ -513,7 +512,7 @@ def comprobar_saga_en_metadatos():
     if has_saga_in_filename():
         elem = xmldoc_opf.getElementsByTagName('meta') #obtiene metadatos
         nodes = [node for node in elem if node.getAttribute('name') == 'calibre:series']
-        if nodes == list():
+        if not nodes:
             lista_errores.append('ERROR 034: ' + listaerrores[34])
 
 def get_translator_from_info_page():
@@ -650,7 +649,8 @@ def get_title_from_title_page():
         title_file = get_title_file_name()
         
     with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
-        pattern = '<h1 class="ttitulo"( id="[^>]+")?( title="[^>]+")?><strong class="sans">([\w\s\.\-&;:,«»\?¿¡!\(\)]+)</strong></h1>'
+        pattern = '<h1 class="ttitulo"( id="[^>]+")?( title="[^>]+")?><strong class="sans">([\'\w\s\.\-&;:,«»\?¿¡!\(\)]+)</strong></h1>'
+
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
@@ -751,7 +751,7 @@ for epub in files:
                     lImages.append(os.path.join(dir, n.getAttribute('href')).replace('%20',' '))
         elem = xmldoc.getElementsByTagName('spine') #get spine        
 
-        #-----Aquí irán las comprobaciones una a una
+        #-----Aquí irán las comprobaciones, una a una
         comprobar_portada_semantics()    
         comprobar_generos_y_subgeneros()
         comprobar_file_size()
