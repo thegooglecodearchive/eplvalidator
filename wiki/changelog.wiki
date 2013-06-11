@@ -6,6 +6,7 @@
   * Añadido apóstrofe a los caracteres permitidos en nombre de archivo y título
   * Detección de nombre de editor digital (Digital editor) en la página info para libros en inglés
   * Ampliada la detección de fecha de publicación en página info para fechas tipo "Nombre apellido, octubre de 2011"
+  * Detección de pagina info por su nombre "info.xhtml" en lugar de por la posición que ocupa en el libro, para de esta manera detectarla correctamente en caso de que el editor introduzca alguna página con logos o imágenes antes de la página info.
 
 ==v1.08(09/06/2013)==
   * Añadida comprobación nueva: Issue 16
