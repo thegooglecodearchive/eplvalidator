@@ -250,7 +250,7 @@ def get_editor_from_info_page():
     if info_file == "":
         info_file = get_info_file_name()
     with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
-        pattern = '<p class="salto10">(Editor digital|Digital editor): ([^<]+)((, .*)?</p>'
+        pattern = '<p class="salto10">(Editor digital|Digital editor): ([^<]+)(, .*)?</p>'
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
