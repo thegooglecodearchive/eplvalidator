@@ -29,7 +29,7 @@ except ImportError as exc:
     pass #podemos seguir ejecutándolo sin tkinter
 
 #Constantes globales
-version = 1.09
+version = 1.10
 version_plantilla = 'v1.0a'
 corregir_errores = True
 
