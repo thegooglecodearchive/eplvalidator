@@ -31,6 +31,7 @@ except ImportError as exc:
 #Constantes globales
 version = 1.09
 version_plantilla = 'v1.0a'
+corregir_errores = True
 
 #archivos principales
 title_file = ""
@@ -90,7 +91,8 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 51 : 'El formato del UUID no es correcto (%s)',
                 52 : 'Se ha encontrado más de un archivo .css en el epub',
                 53 : 'Metadato %s duplicado',
-                54 : 'No se encuentra el archivo cover.jpg'}
+                54 : 'No se encuentra el archivo cover.jpg',
+                55 : 'El epub contiene fuentes incrustadas, pero no se ha incluido el archivo com.apple.ibooks.display.xml en el directorio META-INF'}
 
 uuid_epubbase = ['urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617', 'urn:uuid:00000000-0000-0000-0000-000000000000']
 
@@ -266,6 +268,8 @@ def comprobar_editor_en_titulo_e_info():
         lista_errores.append('ERROR 050: ' + listaerrores[50] %(editor_titulo, editor_info))
     
 def comprobar_portada_semantics():
+    global opf_file
+    global epub_modificado
     elem = xmldoc_opf.getElementsByTagName('metadata') #obtiene metadatos
     for node in elem[0].childNodes:
         if node.nodeName == 'meta':
@@ -273,6 +277,21 @@ def comprobar_portada_semantics():
                 if node.getAttribute('content') == 'cover.jpg':
                     return True
     lista_errores.append('ERROR 002: ' + listaerrores[2])
+    if corregir_errores:
+        #creamos nodo
+        x = xmldoc_opf.createElement('meta')
+        x.setAttribute('content', 'cover.jpg')
+        x.setAttribute('name', 'cover')
+        #añadimos nodo
+        elem[0].appendChild(x)
+        #escribimos el archivo
+        with open(opf_file, "w", encoding="utf-8") as file:
+            #root = xmldoc_opf.documentElement
+            #root.writexml(file, encoding="utf-8")
+            xmldoc_opf.writexml(file, encoding="utf-8")
+        lista_errores.append('--corregido automáticamente')
+        epub_modificado = True
+        
 
 def comprobar_generos_y_subgeneros():
     elem = xmldoc_opf.getElementsByTagName('metadata') #obtiene metadatos
@@ -690,7 +709,7 @@ def comprobar_etiquetas_basura():
                     lista_errores.append('ERROR 046: ' + listaerrores[46] % (match.group(0), i+1, f))
 
 def comprobar_css():
-    files = locate("*.css",sdir)
+    files = locate("*.css", tempdir)
     if sum(1 for _ in files) > 1:
         lista_errores.append('ERROR 052: ' + listaerrores[52])
 
@@ -700,7 +719,35 @@ def comprobar_metadatos_repetidos():
             elem = xmldoc_opf.getElementsByTagName(metadato)
             if len(elem) > 1:
                 lista_errores.append('ERROR 053: ' + listaerrores[53] % metadato)
+
+def comprobar_fuentes_ibooks():
+    global epub_modificado
+    pattern = ".*\.(otf|ttf)"
+    regex = re.compile(pattern, re.IGNORECASE)
     
+    for path, dirs, files in os.walk(os.path.abspath(tempdir)):
+        for file in files:
+            if regex.match(file):
+                if os.path.isfile(tempdir + '/META-INF/com.apple.ibooks.display-options.xml'):
+                    return True
+                else:
+                    lista_errores.append('ERROR 055: ' + listaerrores[55])
+                    if corregir_errores:
+                        file = open(tempdir + '/META-INF/com.apple.ibooks.display-options.xml', 'w+')
+                        text = """<?xml version="1.0" encoding="UTF-8"?> 
+                                <display_options>
+                                <platform name="*">
+                                <option name="specified-fonts">true</option>
+                                </platform>
+                                </display_options>"""
+                        xml = minidom.parseString(text)
+                        file.write(xml.toprettyxml())
+                        file.close()
+                        epub_modificado = True
+                        lista_errores.append('--corregido automáticamente')
+                    return False
+    
+
 if len(sys.argv) == 1:
     #interfaz gráfica para seleccionar archivo
     Tk().withdraw() # No necesitamos un GUI completo, así que no mostramos la ventana principal
@@ -728,7 +775,9 @@ else:
     sys.exit() 
 
 epubs_correctos = 0
-epubs_erroneos = 0           
+epubs_erroneos = 0
+epub_modificado = False
+opf_file = ''        
 #BUCLE PRINCIPAL                    
 
 for epub in files: 
@@ -746,7 +795,8 @@ for epub in files:
         elem = xmldoc.getElementsByTagName('rootfile')
         attr = elem[0].getAttribute('full-path')
         dir = os.path.dirname(attr) + '/'
-        with open(tempdir + attr, "r", encoding="utf-8") as f: #abrimos el content.opf
+        opf_file = tempdir + attr
+        with open(opf_file, "r", encoding="utf-8") as f: #abrimos el content.opf
             xmldoc_opf = minidom.parse(f) #Lo parseamos y lo dejamos en memoria, ya que la mayoría de comprobaciones lo necesitan        
         with open(tempdir + dir + 'toc.ncx', "r", encoding="utf-8") as f: #abrimos el toc.ncx
             xmldoc_ncx = minidom.parse(f)
@@ -760,7 +810,7 @@ for epub in files:
                     lImages.append(os.path.join(dir, n.getAttribute('href')).replace('%20',' '))
         elem = xmldoc.getElementsByTagName('spine') #get spine        
 
-        #-----Aquí irán las comprobaciones, una a una
+        #Aquí irán las comprobaciones, una a una
         comprobar_portada_semantics()    
         comprobar_generos_y_subgeneros()
         comprobar_file_size()
@@ -782,7 +832,18 @@ for epub in files:
         comprobar_fecha_modificacion()
         comprobar_editor_en_titulo_e_info()
         comprobar_css()
-
+        comprobar_fuentes_ibooks()
+        
+        #corregir errores
+        if epub_modificado:
+            zipf = zipfile.ZipFile(sourcefile, "w")
+            zipf.write(tempdir + 'mimetype','mimetype',zipfile.ZIP_STORED)
+    
+            for item in os.listdir(tempdir):
+                if os.path.isdir(tempdir + '/' + item):
+                    recursive_zip(zipf, tempdir + '/' + item, item)
+            zipf.close()
+       
         #imprimir los errores
         print('EPLValidator v%s' %version)
         if lista_errores:
@@ -797,6 +858,7 @@ for epub in files:
         lImages = list()
         title_file = ""
         info_file = ""
+        epub_modificado = False
         print("")
         shutil.rmtree(tempdir)
 
