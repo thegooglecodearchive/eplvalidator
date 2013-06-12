@@ -18,6 +18,7 @@ import string
 import os.path
 import re
 import struct
+import uuid
 from datetime import date
 from datetime import datetime
 from xml.dom import minidom
@@ -286,8 +287,6 @@ def comprobar_portada_semantics():
         elem[0].appendChild(x)
         #escribimos el archivo
         with open(opf_file, "w", encoding="utf-8") as file:
-            #root = xmldoc_opf.documentElement
-            #root.writexml(file, encoding="utf-8")
             xmldoc_opf.writexml(file, encoding="utf-8")
         lista_errores.append('--corregido automáticamente')
         epub_modificado = True
@@ -350,6 +349,8 @@ def comprobar_nombre_archivos_internos():
 
 def comprobar_bookid():
     """comprueba que el book-id es diferente del epub-base y que es el mismo en content.opf y toc.ncx"""
+    global opf_file
+    global epub_modificado
     node = xmldoc_opf.getElementsByTagName('dc:identifier')
     #comprueba si es del tipo UUID
     if (node[0].getAttribute('opf:scheme') != 'UUID'):
@@ -357,6 +358,22 @@ def comprobar_bookid():
     #comprueba si es igual al del epubbase
     elif (node[0].firstChild.nodeValue in uuid_epubbase):
         lista_errores.append('ERROR 015: ' + listaerrores[15])
+        if corregir_errores:
+            newId = uuid.uuid4()
+            node[0].firstChild.nodeValue = 'urn:uuid:' + str(newId)
+            with open(opf_file, "w", encoding="utf-8") as file:
+                xmldoc_opf.writexml(file, encoding="utf-8")
+            node = xmldoc_ncx.getElementsByTagName('meta')
+            for e in node:
+                if e.getAttribute('name') == "dtb:uid":
+                    e.setAttribute('content', 'urn:uuid:' + str(newId))
+               
+            with open(toc_file, "w", encoding="utf-8") as file:
+                xmldoc_ncx.writexml(file, encoding="utf-8")
+
+            lista_errores.append('--corregido automáticamente')
+            epub_modificado = True
+            
     #comrpueba si está relleno
     elif node[0].firstChild.nodeValue == "":
         lista_errores.append('ERROR 016: ' + listaerrores[16])
@@ -372,7 +389,14 @@ def comprobar_bookid():
             if n.getAttribute('name') == 'dtb:uid':
                 if n.getAttribute('content') != node[0].firstChild.nodeValue:
                     lista_errores.append('ERROR 017: ' + listaerrores[17])
-        
+                    if corregir_errores:
+                        n.setAttribute('content', node[0].firstChild.nodeValue)
+                        with open(toc_file, "w", encoding="utf-8") as file:
+                            xmldoc_ncx.writexml(file, encoding="utf-8")
+
+                        lista_errores.append('--corregido automáticamente')
+                        epub_modificado = True
+                        
  
 def get_version_from_title_page(epub):
     global title_file
@@ -777,7 +801,8 @@ else:
 epubs_correctos = 0
 epubs_erroneos = 0
 epub_modificado = False
-opf_file = ''        
+opf_file = ''
+toc_file = ''        
 #BUCLE PRINCIPAL                    
 
 for epub in files: 
@@ -798,7 +823,8 @@ for epub in files:
         opf_file = tempdir + attr
         with open(opf_file, "r", encoding="utf-8") as f: #abrimos el content.opf
             xmldoc_opf = minidom.parse(f) #Lo parseamos y lo dejamos en memoria, ya que la mayoría de comprobaciones lo necesitan        
-        with open(tempdir + dir + 'toc.ncx', "r", encoding="utf-8") as f: #abrimos el toc.ncx
+        toc_file = tempdir + dir + 'toc.ncx'
+        with open(toc_file, "r", encoding="utf-8") as f: #abrimos el toc.ncx
             xmldoc_ncx = minidom.parse(f)
         elem = xmldoc_opf.getElementsByTagName('manifest') #obtenemos el manifiesto y registramos todos los capitulos e imágenes
         for n in elem[0].childNodes:
