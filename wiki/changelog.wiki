@@ -1,6 +1,6 @@
 #registro de cambios
 
-==v1.09(TBA)==
+==v1.09(12/06/2013)==
   * Corregidas Issue 21, Issue 22, Issue 23
   * Añadidos caracteres '-', '.', ',' en el patron que detecta una saga en el nombre de archivo
   * Añadido apóstrofe a los caracteres permitidos en nombre de archivo y título
