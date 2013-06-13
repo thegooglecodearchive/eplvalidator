@@ -6,7 +6,7 @@ Created on May 16, 2013
 
 @author: betatron
 
-Ver changelog.txt para listado de pruebas implementadas y pendientes
+Ver changelog para listado de pruebas implementadas y pendientes
 
 '''
 
@@ -359,14 +359,14 @@ def comprobar_bookid():
     elif (node[0].firstChild.nodeValue in uuid_epubbase):
         lista_errores.append('ERROR 015: ' + listaerrores[15])
         if corregir_errores:
-            newId = uuid.uuid4()
+            newId = uuid.uuid4() #generamos nuevo uuid aleatorio
             node[0].firstChild.nodeValue = 'urn:uuid:' + str(newId)
             with open(opf_file, "w", encoding="utf-8") as file:
-                xmldoc_opf.writexml(file, encoding="utf-8")
+                xmldoc_opf.writexml(file, encoding="utf-8") #lo actualizamos en content.opf
             node = xmldoc_ncx.getElementsByTagName('meta')
             for e in node:
                 if e.getAttribute('name') == "dtb:uid":
-                    e.setAttribute('content', 'urn:uuid:' + str(newId))
+                    e.setAttribute('content', 'urn:uuid:' + str(newId)) #lo actualizamos en toc.ncx
                
             with open(toc_file, "w", encoding="utf-8") as file:
                 xmldoc_ncx.writexml(file, encoding="utf-8")
@@ -390,10 +390,9 @@ def comprobar_bookid():
                 if n.getAttribute('content') != node[0].firstChild.nodeValue:
                     lista_errores.append('ERROR 017: ' + listaerrores[17])
                     if corregir_errores:
-                        n.setAttribute('content', node[0].firstChild.nodeValue)
+                        n.setAttribute('content', node[0].firstChild.nodeValue) #actualizamos el uuid en toc.ncx
                         with open(toc_file, "w", encoding="utf-8") as file:
                             xmldoc_ncx.writexml(file, encoding="utf-8")
-
                         lista_errores.append('--corregido automáticamente')
                         epub_modificado = True
                         
@@ -509,12 +508,8 @@ def comprobar_metadatos_obligatorios():
             if 'descripción' in metadatos_obligatorios:
                 metadatos_obligatorios.remove('descripción')
         
-    if metadatos_obligatorios != list():
-        #esto es una guarrada, pero me estaba dando problemas al imprimir la lista, ya que contiene cadenas en unicode
-        metadatos_erroneos = ''
-        for x in metadatos_obligatorios:
-            metadatos_erroneos = metadatos_erroneos + x + ', '
-        lista_errores.append('ERROR 030: ' + listaerrores[30] % metadatos_erroneos[:-2])
+    if metadatos_obligatorios:
+        lista_errores.append('ERROR 030: ' + listaerrores[30] % ', '.join(metadatos_obligatorios))
 
 def get_anyo_publicacion_from_info_page():
     global info_file
@@ -860,7 +855,7 @@ for epub in files:
         comprobar_css()
         comprobar_fuentes_ibooks()
         
-        #corregir errores
+        #corregir errores, generar nuevo epub
         if epub_modificado:
             zipf = zipfile.ZipFile(sourcefile, "w")
             zipf.write(tempdir + 'mimetype','mimetype',zipfile.ZIP_STORED)
@@ -880,14 +875,18 @@ for epub in files:
             epubs_correctos +=1
             print("todo está OK!")
         lista_errores = list()
+        
+        #limpiar variables para proximo epub
         lChapters = list()
         lImages = list()
         title_file = ""
         info_file = ""
         epub_modificado = False
+        
         print("")
         shutil.rmtree(tempdir)
 
+#Mostrar resumen de resultados
 print("Total epubs correctos: " + str(epubs_correctos))
 print("Total epubs con errores: " + str(epubs_erroneos))
         
