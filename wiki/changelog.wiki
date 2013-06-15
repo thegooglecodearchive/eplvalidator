@@ -1,5 +1,13 @@
 #registro de cambios
 
+==v1.10(16/06/2013)==
+  * Comprobación de que los metadatos Autor, File-as, Fecha de publicación y Sinopsis son diferentes de los del epubbase
+  * Detección de la página info por su posición, en caso de que no se encuentre ningún archivo de nombre info.xhtml
+  * Corrección automática de marcar cover.jpg como imagen de portada
+  * Generación automática de nuevo UUID en caso de que coincida con el epub base
+  * Generación automática del archivo com.apple.ibooks.display.xml en caso de que el libro tenga fuentes incrustadas
+
+
 ==v1.09(12/06/2013)==
   * Corregidas Issue 21, Issue 22, Issue 23
   * Añadidos caracteres '-', '.', ',' en el patron que detecta una saga en el nombre de archivo
