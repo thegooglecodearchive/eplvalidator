@@ -93,7 +93,10 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 52 : 'Se ha encontrado más de un archivo .css en el epub',
                 53 : 'Metadato %s duplicado',
                 54 : 'No se encuentra el archivo cover.jpg',
-                55 : 'El epub contiene fuentes incrustadas, pero no se ha incluido el archivo com.apple.ibooks.display.xml en el directorio META-INF'}
+                55 : 'El epub contiene fuentes incrustadas, pero no se ha incluido el archivo com.apple.ibooks.display.xml en el directorio META-INF',
+                56 : 'El "Ordenar como" del metadato Autor es el del epub base, debe cambiarse en cada aporte',
+                57 : 'La fecha de publicación es la del epub base. Debe cambiarse para cada aporte',
+                58 : 'El metadato Sinopsis es el del epubbase. Debe cambiarse para cada aporte'}
 
 uuid_epubbase = ['urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617', 'urn:uuid:00000000-0000-0000-0000-000000000000']
 
@@ -209,13 +212,22 @@ def file_as_to_author(autor):
 
 #obtención de datos básicos
 def get_info_file_name():
-    #elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
     title_id = 'info.xhtml'
     elem = xmldoc_opf.getElementsByTagName('manifest')
     for n in elem[0].childNodes:
         if n.nodeName == 'item':
             if n.getAttribute('id') == title_id:
+                return(n.getAttribute('href')) 
+    #si no se ha encontrado el info, significa que se ha cambiado el nombre. Lo buscamos por posición
+    elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
+    title_id = elem[3].getAttribute('idref')
+    elem = xmldoc_opf.getElementsByTagName('manifest')
+    for n in elem[0].childNodes:
+        if n.nodeName == 'item':
+            if n.getAttribute('id') == title_id:
                 return(n.getAttribute('href'))    
+
+   
 
 def get_title_file_name():
     elem = xmldoc_opf.getElementsByTagName('itemref') #get spine
@@ -389,14 +401,15 @@ def comprobar_bookid():
             if n.getAttribute('name') == 'dtb:uid':
                 if n.getAttribute('content') != node[0].firstChild.nodeValue:
                     lista_errores.append('ERROR 017: ' + listaerrores[17])
-                    if corregir_errores:
-                        n.setAttribute('content', node[0].firstChild.nodeValue) #actualizamos el uuid en toc.ncx
-                        with open(toc_file, "w", encoding="utf-8") as file:
-                            xmldoc_ncx.writexml(file, encoding="utf-8")
-                        lista_errores.append('--corregido automáticamente')
-                        epub_modificado = True
-                        
- 
+                    
+#                    if corregir_errores:
+#                        n.setAttribute('content', node[0].firstChild.nodeValue) #actualizamos el uuid en toc.ncx
+#                        with open(toc_file, "w", encoding="utf-8") as file:
+#                            xmldoc_ncx.writexml(file, encoding="utf-8")
+#                        lista_errores.append('--corregido automáticamente')
+#                        epub_modificado = True
+                    
+
 def get_version_from_title_page(epub):
     global title_file
     if title_file == "":
@@ -476,8 +489,10 @@ def comprobar_metadatos_obligatorios():
                     metadatos_obligatorios.remove('título')
         
         elif (node.nodeName == 'dc:creator') and (node.getAttribute('opf:role') == 'aut'):
-            if node.firstChild.nodeValue == 'Autor': #hemos olvidado sustituir el autor por defecto del epub base
+            if node.firstChild.nodeValue == 'Nombres Apellidos': #hemos olvidado sustituir el autor por defecto del epub base
                 lista_errores.append('ERROR 027: ' + listaerrores[27])
+                if node.getAttribute('opf:file-as') == 'Apellidos, Nombres': #hemos olvidado sustituir el File-as por defecto del epub base
+                    lista_errores.append('ERROR 056: ' + listaerrores[56])
             else:
                 if 'autor' in metadatos_obligatorios:
                     metadatos_obligatorios.remove('autor')
@@ -501,10 +516,14 @@ def comprobar_metadatos_obligatorios():
                 metadatos_obligatorios.remove('modificación')
                 
         elif (node.nodeName == 'dc:date') and (node.getAttribute('opf:event') == 'publication'):
+            if node.firstChild.nodeValue == '2013-04-23': #hemos olvidado cambiar la fecha de publicación del epub base
+                lista_errores.append('ERROR 057: ' + listaerrores[57])
             if 'publicación' in metadatos_obligatorios:
                 metadatos_obligatorios.remove('publicación')
                 
         elif node.nodeName == 'dc:description':
+            if node.firstChild.nodeValue == 'Sinopsis': #hemos olvidado cambiar la sinopsis del epub base
+                lista_errores.append('ERROR 058: ' + listaerrores[58])
             if 'descripción' in metadatos_obligatorios:
                 metadatos_obligatorios.remove('descripción')
         
