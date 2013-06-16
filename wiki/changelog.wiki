@@ -1,5 +1,8 @@
 #registro de cambios
 
+
+==v1.11(TBA)==
+
 ==v1.10(16/06/2013)==
   * Comprobación de que los metadatos Autor, File-as, Fecha de publicación y Sinopsis son diferentes de los del epubbase
   * Detección de la página info por su posición, en caso de que no se encuentre ningún archivo de nombre info.xhtml
