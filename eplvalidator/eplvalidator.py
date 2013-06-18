@@ -478,7 +478,7 @@ def comprobar_formato_nombre_archivo():
 
 def comprobar_metadatos_obligatorios():
     elem = xmldoc_opf.getElementsByTagName('metadata') #obtiene metadatos
-    metadatos_obligatorios = ['título', 'autor', 'idioma', 'editorial', 'publicación', 'modificación', 'descripción']
+    metadatos_obligatorios = ['título', 'autor', 'idioma', 'editorial', 'publicación', 'modificación', 'descripción', 'materia']
     for node in elem[0].childNodes:
         
         if node.nodeName == 'dc:title':
@@ -526,6 +526,9 @@ def comprobar_metadatos_obligatorios():
                 lista_errores.append('ERROR 058: ' + listaerrores[58])
             if 'descripción' in metadatos_obligatorios:
                 metadatos_obligatorios.remove('descripción')
+        elif node.nodeName == 'dc:subject':
+            if 'materia' in metadatos_obligatorios:
+                metadatos_obligatorios.remove('materia')
         
     if metadatos_obligatorios:
         lista_errores.append('ERROR 030: ' + listaerrores[30] % ', '.join(metadatos_obligatorios))
