@@ -4,7 +4,7 @@
 
 ==v1.11(TBA)==
   * Corregida Issue 25
-  * Nuevas pruebas: Issue 29
+  * Nuevas pruebas: Issue 26, Issue 29
 
 ==v1.10(16/06/2013)==
   * Comprobación de que los metadatos Autor, File-as, Fecha de publicación y Sinopsis son diferentes de los del epubbase
