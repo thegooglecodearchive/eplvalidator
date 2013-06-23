@@ -1,10 +1,10 @@
 #labels Featured
 #registro de cambios
 
-
 ==v1.11(TBA)==
   * Corregida Issue 25
   * Nuevas pruebas: Issue 26, Issue 29
+  * Se permite usar año de 4 cifras en la fecha de modificación de la página título
 
 ==v1.10(16/06/2013)==
   * Comprobación de que los metadatos Autor, File-as, Fecha de publicación y Sinopsis son diferentes de los del epubbase
