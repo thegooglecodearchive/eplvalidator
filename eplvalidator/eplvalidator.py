@@ -30,8 +30,8 @@ except ImportError as exc:
     pass #podemos seguir ejecutándolo sin tkinter
 
 #Constantes globales
-version = 1.10
-version_plantilla = 'v1.0a'
+version = 1.11
+version_plantilla = 1.0
 corregir_errores = True
 
 #archivos principales
@@ -96,7 +96,10 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 55 : 'El epub contiene fuentes incrustadas, pero no se ha incluido el archivo com.apple.ibooks.display.xml en el directorio META-INF',
                 56 : 'El "Ordenar como" del metadato Autor es el del epub base, debe cambiarse en cada aporte',
                 57 : 'La fecha de publicación es la del epub base. Debe cambiarse para cada aporte',
-                58 : 'El metadato Sinopsis es el del epubbase. Debe cambiarse para cada aporte'}
+                58 : 'El metadato Descripción (Sinopsis) es el del epubbase. Debe cambiarse para cada aporte',
+                59 : 'Versión actual de la plantilla (%0.1f) no coincide con la versión de la plantilla mencionada en la página info (%s)',
+                60 : 'No se ha encontrado la versión de la plantilla en la página info',
+                61 : 'La línea "subtítulo" en la página de título es la del epubbase. Debe cambiarse o eliminarse en caso de no ser necesaria'}
 
 uuid_epubbase = ['urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617', 'urn:uuid:00000000-0000-0000-0000-000000000000']
 
@@ -274,6 +277,23 @@ def get_editor_from_info_page():
     lista_errores.append('ERROR 049: ' + listaerrores[49])
    
 #Funciones para comprobaciones en los epubs
+def comprobar_version_plantilla():
+    global info_file
+    if info_file == "":
+        info_file = get_info_file_name()
+        
+    with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
+        pattern = '<p>ePub base r([0-9]\.[0-9])</p>'
+        for line in f:
+            m = re.search(pattern, line)
+            if not m is None:
+                if m.group(1) != '%0.1f' % version_plantilla:
+                    lista_errores.append('ERROR 059: ' + listaerrores[59] % (version_plantilla, m.group(1)))
+                return True
+    lista_errores.append('ERROR 060: ' + listaerrores[60])
+    
+
+
 def comprobar_editor_en_titulo_e_info():
     editor_titulo = get_editor_from_title_page()
     editor_info =get_editor_from_info_page()
@@ -365,7 +385,7 @@ def comprobar_bookid():
     global epub_modificado
     node = xmldoc_opf.getElementsByTagName('dc:identifier')
     #comprueba si es del tipo UUID
-    if (node[0].getAttribute('opf:scheme') != 'UUID'):
+    if (node[0].getAttribute('opf:scheme').upper() != 'UUID'):
         lista_errores.append('ERROR 047: ' + listaerrores[47])
     #comprueba si es igual al del epubbase
     elif (node[0].firstChild.nodeValue in uuid_epubbase):
@@ -489,7 +509,7 @@ def comprobar_metadatos_obligatorios():
                     metadatos_obligatorios.remove('título')
         
         elif (node.nodeName == 'dc:creator') and (node.getAttribute('opf:role') == 'aut'):
-            if node.firstChild.nodeValue == 'Nombres Apellidos': #hemos olvidado sustituir el autor por defecto del epub base
+            if (node.firstChild.nodeValue == 'Nombres Apellidos') or (node.firstChild.nodeValue == 'Autor'): #hemos olvidado sustituir el autor por defecto del epub base
                 lista_errores.append('ERROR 027: ' + listaerrores[27])
                 if node.getAttribute('opf:file-as') == 'Apellidos, Nombres': #hemos olvidado sustituir el File-as por defecto del epub base
                     lista_errores.append('ERROR 056: ' + listaerrores[56])
@@ -738,6 +758,22 @@ def comprobar_titulo():
     if titulo_metadata != titulo_titlepage:
         lista_errores.append('ERROR 045: ' + listaerrores[45] % (titulo_metadata, titulo_titlepage))
 
+def comprobar_subtitulo():
+    global title_file
+    if title_file == "":
+        title_file = get_title_file_name()
+        
+    with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
+        pattern = '<p class="tsubtitulo"><strong class="sans">Subtítulo</strong></p>'
+
+        for line in f:
+            m = re.search(pattern, line)
+            if not m is None:
+                lista_errores.append('ERROR 061: ' + listaerrores[61])
+            
+    
+
+
 def comprobar_etiquetas_basura():
     patterns = list()
     patterns.append('<[ib]>')
@@ -862,7 +898,8 @@ for epub in files:
         comprobar_nombre_archivos_internos()
         comprobar_bookid() 
         comprobar_etiquetas_basura()
-        comprobar_version_coincidente(epub)     
+        comprobar_version_coincidente(epub)
+        comprobar_version_plantilla()   
         comprobar_formato_nombre_archivo()  
         comprobar_metadatos_obligatorios()
         comprobar_metadatos_repetidos()
@@ -872,6 +909,7 @@ for epub in files:
         comprobar_size_portada()
         comprobar_autor()
         comprobar_titulo()
+        comprobar_subtitulo()
         comprobar_fecha_modificacion()
         comprobar_editor_en_titulo_e_info()
         comprobar_css()
@@ -888,7 +926,7 @@ for epub in files:
             zipf.close()
        
         #imprimir los errores
-        print('EPLValidator v%s' %version)
+        print('EPLValidator v%0.2f' %version)
         if lista_errores:
             epubs_erroneos +=1
             for e in lista_errores:
