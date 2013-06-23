@@ -3,7 +3,7 @@
 
 ==v1.11(TBA)==
   * Corregida Issue 25
-  * Nuevas pruebas: Issue 26, Issue 29
+  * Nuevas pruebas: Issue 26, Issue 29,  Issue 27
   * Se permite usar año de 4 cifras en la fecha de modificación de la página título
 
 ==v1.10(16/06/2013)==
