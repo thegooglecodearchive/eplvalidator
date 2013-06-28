@@ -19,8 +19,7 @@ import os.path
 import re
 import struct
 import uuid
-from datetime import date
-from datetime import datetime
+from datetime import datetime, date
 from xml.dom import minidom
 
 try:
@@ -59,7 +58,7 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 18 : "Versión no encontrada en el nombre de archivo",
                 19 : "No se ha detectado correctamente la versión en la página de título. Es posible que haya algún error en el formato",
                 20 : "No se ha detectado correctamente la fecha en la página de título. Es posible que haya algún error en el formato",
-                21 : "No se ha detectado correctamente la fecha de modificación en los metadatos",
+                21 : 'Falta el metadato "fecha de modificación"',
                 22 : "No se ha detectado correctamente la fecha de modificación en la página de título",
                 23 : "La fecha de modificación en la página de título (%s) difiere de la fecha de modificación de los metadatos (%s)",
                 24 : 'La versión en nombre de archivo (%s) difiere de la versión en la página de título (%s)',
@@ -74,7 +73,7 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 33 : "El año de publicación en los metadatos (%s) es posterior al año actual",
                 34 : 'No se ha indicado la saga en los metadatos mediante la etiqueta <meta content="XXX" name="calibre:series"/>',
                 35 : "Falta el traductor en los metadatos",
-                36 : "Falta el traductor en la página info",
+                36 : "Falta el traductor en la página info. Sin embargo, en los metadatos aparece el traductor '%s'",
                 37 : "El File_as (Ordenar como) del traductor (%s) parece incorrecto al compararlo con el nombre de traductor (%s)",
                 38 : "El traductor en la página info (%s) no coincide con el traductor en los metadatos (%s)",
                 39 : "Hay algún problema con el formato del archivo cover.jpg. No se ha podido detectar su tamaño",
@@ -99,7 +98,9 @@ listaerrores = {1 : "File-as (%s) incorrecto. Falta coma de separación",
                 58 : 'El metadato Descripción (Sinopsis) es el del epubbase. Debe cambiarse para cada aporte',
                 59 : 'Versión actual de la plantilla (%0.1f) no coincide con la versión de la plantilla mencionada en la página info (%s)',
                 60 : 'No se ha encontrado la versión de la plantilla en la página info',
-                61 : 'La línea "subtítulo" en la página de título es la del epubbase. Debe cambiarse o eliminarse en caso de no ser necesaria'}
+                61 : 'La línea "subtítulo" en la página de título es la del epubbase. Debe cambiarse o eliminarse en caso de no ser necesaria',
+                62 : 'Línea sin modificar en archivo info.xhtml (%s). Debe cambiarse o eliminarse si no es necesaria',
+                63 : 'La fecha de modificación en los metadatos es la del epub base'}
 
 uuid_epubbase = ['urn:uuid:125147a0-df57-4660-b1bc-cd5ad2eb2617', 'urn:uuid:00000000-0000-0000-0000-000000000000']
 
@@ -448,18 +449,22 @@ def get_modification_date_from_title_page():
     if title_file == "":
         title_file = get_title_file_name()
     with open(tempdir + dir + title_file, "r", encoding="utf-8") as f:
-        pattern = '<p class="tfirma"><strong class="sans">[^<]+</strong> <code class="tfecha sans">(\d{2}\.\d{2}\.\d{2})</code></p>'
+        pattern = '<p class="tfirma"><strong class="sans">[^<]+</strong> <code class="tfecha sans">(\d{2}\.\d{2}\.\d{2,4})</code></p>'
         for line in f:
             m = re.search(pattern, line)
             if not m is None:
-                return datetime.strptime(m.group(1), '%d.%m.%y')
-    lista_errores.append('ERROR 020: ' + listaerrores[20])
+                if len(m.group(1)) == 8:
+                    return datetime.strptime(m.group(1), '%d.%m.%y').date()
+                elif len(m.group(1)) == 10:
+                    return datetime.strptime(m.group(1), '%d.%m.%Y').date()
+                
+    #lista_errores.append('ERROR 020: ' + listaerrores[20])
 
 def get_modification_date_from_metadata():
     elem = xmldoc_opf.getElementsByTagName('dc:date') #obtiene metadatos
     for node in elem:
         if (node.getAttribute('opf:event') == 'modification'):
-            return datetime.strptime(node.firstChild.nodeValue,'%Y-%m-%d')
+            return datetime.strptime(node.firstChild.nodeValue,'%Y-%m-%d').date()
 
 def comprobar_fecha_modificacion():
     mdate_metadata = get_modification_date_from_metadata()
@@ -469,8 +474,11 @@ def comprobar_fecha_modificacion():
             lista_errores.append('ERROR 021: ' + listaerrores[21])
         elif mdate_title is None:
             lista_errores.append('ERROR 022: ' + listaerrores[22])
+        #comprobamos si la fecha de modificación es la del epub base
+        elif (mdate_metadata == date(2012, 12, 12)) or (mdate_metadata == date(2013, 4, 23)):
+            lista_errores.append('ERROR 063: ' + listaerrores[63])
         else:
-            lista_errores.append('ERROR 023: ' + listaerrores[23] % (mdate_title.date(), mdate_metadata.date()))
+            lista_errores.append('ERROR 023: ' + listaerrores[23] % (mdate_title, mdate_metadata))
 
 def comprobar_version_coincidente(epub):
     v_nombre_archivo = get_version_from_filename(epub)
@@ -624,7 +632,7 @@ def comprobar_traductor():
                 lista_errores.append('ERROR 035: ' + listaerrores[35])
             elif (traductor_metadatos is not None):
                 if (traductor_info is None):
-                    lista_errores.append('ERROR 036: ' + listaerrores[36])
+                    lista_errores.append('ERROR 036: ' + listaerrores[36] % traductor_metadatos)
                 if (traductor_fileas != '') and (traductor_fileas_invertido != traductor_metadatos):
                     lista_errores.append('ERROR 037: ' + listaerrores[37] % (traductor_fileas, traductor_metadatos))
             elif  traductor_metadatos != traductor_info:
@@ -823,7 +831,24 @@ def comprobar_fuentes_ibooks():
                         epub_modificado = True
                         lista_errores.append('--corregido automáticamente')
                     return False
-    
+
+def comprobar_lineas_inutiles_info():
+    global info_file
+    if info_file == "":
+        info_file = get_info_file_name()
+    with open(tempdir + dir + info_file, "r", encoding="utf-8") as f:
+        patterns = list()
+        patterns.append('<p>Título original: <em>Título</em></p>')
+        patterns.append('<p>Autor, año de 1.ª publicación en idioma original</p>')
+        patterns.append('<p>Traducción: Traductor</p>')
+        patterns.append('<p>Ilustraciones: Ilustrador</p>')
+        patterns.append('<p>Diseño/Retoque de portada: Diseñador</p>')
+        patterns.append('<p class="salto10">Editor digital: Editor</p>')
+
+        for line in f:
+            for pattern in patterns:
+                if pattern in line:
+                    lista_errores.append('ERROR 062: ' + listaerrores[62] % pattern)
 
 if len(sys.argv) == 1:
     #interfaz gráfica para seleccionar archivo
@@ -914,6 +939,7 @@ for epub in files:
         comprobar_editor_en_titulo_e_info()
         comprobar_css()
         comprobar_fuentes_ibooks()
+        comprobar_lineas_inutiles_info()
         
         #corregir errores, generar nuevo epub
         if epub_modificado:
