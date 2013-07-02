@@ -1,7 +1,9 @@
 #labels Featured
 #registro de cambios
 
-==v1.11(TBA)==
+==v1.12(TBA)==
+
+==v1.11(02/07/2013)==
   * Corregida Issue 25
   * Nuevas pruebas: Issue 26, Issue 29,  Issue 27, Issue 30
   * Se permite usar año de 4 cifras en la fecha de modificación de la página título
