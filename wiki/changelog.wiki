@@ -1,7 +1,8 @@
 #labels Featured
 #registro de cambios
 
-==v1.12(TBA)==
+==v1.12(20/10/2013)==
+  * Añadido Error 064. Antes se cerraba el programa de forma inesperada al encontrarse este error
 
 ==v1.11(02/07/2013)==
   * Corregida Issue 25
