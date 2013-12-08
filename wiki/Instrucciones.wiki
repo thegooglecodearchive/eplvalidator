@@ -20,6 +20,14 @@ o bien:
 
 significa que NO tenemos un interprete de python 3 instalado. En caso de que tengamos uno, la salida nos mostrará el número de versión.
 
+Si obtienes un error de este tipo:
+
+        {{{Error: failed to import settings module (No module named '_tkinter', please install the python-tk package)Traceback (most recent call last):}}}
+
+probablemente el problema es que no tienes la librería tkinter instalada. En Ubuntu se soluciona con el siguiente comando:
+
+         {{{sudo apt-get install python3-tk}}}
+
 Si no disponemos del interprete de python 3, debemos visitar http://python.org/download/ y descargar e instalar la versión correspondiente a nuestro sistema operativo (recomiendo instalar la 3.3.1 o posterior).
 
 =USUARIOS DE WINDOWS=
